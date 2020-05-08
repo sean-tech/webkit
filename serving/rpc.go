@@ -14,6 +14,7 @@ import (
 	"github.com/smallnest/rpcx/serverplugin"
 	"log"
 	"math"
+	"strings"
 	"sync"
 	"time"
 )
@@ -153,36 +154,57 @@ func getDiscovery(serviceName string) *client.ServiceDiscovery {
 	return &discovery
 }
 
+type IRpcxLogger interface {
+	Rpcx(v ...interface{})
+	Error(v ...interface{})
+	Errorf(format string, v ...interface{})
+}
 type rpclogger struct {
 }
 var RpcLogger = &rpclogger{}
 
 func (this *rpclogger) PostReadRequest(ctx context.Context, r *protocol.Message, e error) error {
-	_rpcConfig.Logger.Infof("PostReadRequest requestion:%s | message:%s | error:%s", foundation.GetRequisition(ctx).RequestId, r, e.Error())
+	logPrint("PostReadRequest", ctx, r, e)
 	return nil
 }
 
 func (this *rpclogger)PreHandleRequest(ctx context.Context, r *protocol.Message) error {
-	_rpcConfig.Logger.Infof("PreHandleRequest requestion:%s | message:%s", foundation.GetRequisition(ctx).RequestId, r)
 	return nil
 }
-
 func (this *rpclogger) PreWriteResponse(ctx context.Context, req *protocol.Message, resp *protocol.Message) error {
-	_rpcConfig.Logger.Infof("PreWriteResponse requestion:%s | req message:%s | resp message:%s", foundation.GetRequisition(ctx).RequestId, req, resp)
 	return nil
 }
 
 func (this *rpclogger) PostWriteResponse(ctx context.Context, req *protocol.Message, resp *protocol.Message, e error) error {
-	_rpcConfig.Logger.Infof("PostWriteResponse requestion:%s | req message:%s | resp message:%s | error:%s", foundation.GetRequisition(ctx).RequestId, req, resp, e.Error())
+	logPrint("PostWriteResponse", ctx, resp, e)
 	return nil
 }
 
 func (this *rpclogger) PreWriteRequest(ctx context.Context) error {
-	_rpcConfig.Logger.Infof("PreWriteRequest requestion:%s", foundation.GetRequisition(ctx).RequestId)
+	return nil
+}
+func (this *rpclogger) PostWriteRequest(ctx context.Context, r *protocol.Message, e error) error {
 	return nil
 }
 
-func (this *rpclogger) PostWriteRequest(ctx context.Context, r *protocol.Message, e error) error {
-	_rpcConfig.Logger.Infof("PostWriteRequest requestion:%s | message:%s | error:%s", foundation.GetRequisition(ctx).RequestId, r, e.Error())
-	return nil
+func logPrint(prefix string, ctx context.Context, msg *protocol.Message, e error)  {
+	if e != nil {
+		_rpcConfig.Logger.Errorf("[RPCX] %s error:%s", prefix, e.Error())
+		return
+	}
+
+	var request_id uint64 = 0
+	var user_name string = ""
+	if requisition := foundation.GetRequisition(ctx); requisition != nil {
+		request_id = requisition.RequestId
+		user_name = requisition.UserName
+	}
+	payload := strings.ToValidUTF8(string(msg.Payload), ":")
+	var info = fmt.Sprintf("%s request_id:%d | user_name:%s | service_call:%s.%s | metadata:%s | payload:%s ",
+		prefix, request_id, user_name, msg.ServicePath, msg.ServiceMethod, msg.Metadata, payload)
+	if logger, ok := _rpcConfig.Logger.(IRpcxLogger); ok {
+		logger.Rpcx(info)
+	} else {
+		_rpcConfig.Logger.Infof("[RPCX] %s", info)
+	}
 }

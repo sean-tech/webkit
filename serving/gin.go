@@ -43,7 +43,7 @@ type HttpConfig struct {
 	JwtIssuer 			string			`json:"jwt_issuer" validate:"required,gte=1"`
 	JwtExpiresTime 		time.Duration	`json:"jwt_expires_time" validate:"required,gte=1"`
 	// storage
-	Logger       		*log.Logger     `json:"logger" validate:"required"`
+	Logger       		IGinLogger    	`json:"logger" validate:"required"`
 	SecretStorage 		ISecretStorage  `json:"secret_storage" validate:"required"`
 	// secret
 	SecretOpen			bool			`json:"secret_open"`
@@ -251,25 +251,31 @@ func (g *Gin) Response(statusCode StatusCode, msg string, data interface{}, sign
 	return
 }
 
+
+type IGinLogger interface {
+	Writer() io.Writer
+	Gin(v ...interface{})
+}
+
 func (g *Gin) LogRequestParam(parameter interface{}) {
-	_httpConfig.Logger.SetPrefix("[GIN] ")
+	var requestion = foundation.GetRequisition(g.Ctx)
 	if jsonBytes, ok := parameter.([]byte); ok {
-		_httpConfig.Logger.Printf("request_id:%d | params:%s\n", foundation.GetRequisition(g.Ctx).RequestId, jsonBytes)
+		_httpConfig.Logger.Gin("request_id:", requestion.RequestId, "user_name:", requestion.UserName, " | params:", string(jsonBytes), "\n")
 	} else if jsonBytes, err := json.Marshal(parameter); err == nil {
-		_httpConfig.Logger.Printf("request_id:%d | params:%s\n", foundation.GetRequisition(g.Ctx).RequestId, jsonBytes)
+		_httpConfig.Logger.Gin("request_id:", requestion.RequestId, "user_name:", requestion.UserName, " | params:", string(jsonBytes), "\n")
 	} else {
-		_httpConfig.Logger.Printf("request_id:%d | params:%s\n", foundation.GetRequisition(g.Ctx).RequestId, parameter)
+		_httpConfig.Logger.Gin("request_id:", requestion.RequestId, "user_name:", requestion.UserName, " | params:", parameter, "\n")
 	}
 }
 
 func (g *Gin) LogResponseInfo(statusCode StatusCode, msg string, data interface{}, sign string) {
-	_httpConfig.Logger.SetPrefix("[GIN] ")
+	var requestion = foundation.GetRequisition(g.Ctx)
 	if jsonBytes, ok := data.([]byte); ok {
-		_httpConfig.Logger.Printf("request_id:%d | response code:%d | msg:%s | data:%s | sign:%s\n", foundation.GetRequisition(g.Ctx).RequestId, statusCode, msg, jsonBytes, sign)
+		_httpConfig.Logger.Gin("request_id:", requestion.RequestId, "user_name:", requestion.UserName, " | response code:", statusCode, " | msg:", msg, " | data:", string(jsonBytes), " | sign:", sign, "\n")
 	} else if jsonBytes, err := json.Marshal(data); err == nil {
-		_httpConfig.Logger.Printf("request_id:%d | response code:%d | msg:%s | data:%s | sign:%s\n", foundation.GetRequisition(g.Ctx).RequestId, statusCode, msg, jsonBytes, sign)
+		_httpConfig.Logger.Gin("request_id:", requestion.RequestId, "user_name:", requestion.UserName, " | response code:", statusCode, " | msg:", msg, " | data:", string(jsonBytes), " | sign:", sign, "\n")
 	} else {
-		_httpConfig.Logger.Printf("request_id:%d | response code:%d | msg:%s | data:%s | sign:%s\n", foundation.GetRequisition(g.Ctx).RequestId, statusCode, msg, data, sign)
+		_httpConfig.Logger.Gin("request_id:", requestion.RequestId, "user_name:", requestion.UserName, " | response code:", statusCode, " | msg:", msg, " | data:", data, " | sign:", sign, "\n")
 	}
 }
 

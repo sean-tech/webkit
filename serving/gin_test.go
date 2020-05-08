@@ -7,11 +7,10 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/sean-tech/gokit/foundation"
+	"github.com/sean-tech/gokit/logging"
 	"github.com/sean-tech/gokit/validate"
 	"io/ioutil"
-	"log"
 	"net/http"
-	"os"
 	"testing"
 	"time"
 )
@@ -36,6 +35,10 @@ type GoodsPayParameter struct {
 }
 
 func TestGinServer(t *testing.T) {
+	logging.Setup(logging.LogConfig{
+		LogSavePath:     "/Users/lyra/Desktop/",
+		LogPrefix:       "gintest",
+	})
 	// server start
 	HttpServerServe(HttpConfig{
 		RunMode:        "debug",
@@ -50,7 +53,7 @@ func TestGinServer(t *testing.T) {
 		ServerPubKey:   "",
 		ServerPriKey:   "",
 		ClientPubKey:   "",
-		Logger:         log.New(os.Stdout, "", log.LstdFlags),
+		Logger:         logging.Logger(),
 		SecretStorage:  NewMemeoryStorage(),
 	}, RegisterApi)
 }

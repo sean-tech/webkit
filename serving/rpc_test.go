@@ -38,9 +38,7 @@ func (this *userServiceImpl) UserAdd(ctx context.Context, parameter *UserAddPara
 
 func TestRpcServer(t *testing.T) {
 	logging.Setup(logging.LogConfig{
-		RunMode:         "debug",
-		RuntimeRootPath: "/Users/lyra/",
-		LogSavePath:     "Desktop/",
+		LogSavePath:     "/Users/lyra/Desktop/",
 		LogPrefix:       "rpctest",
 	})
 	_rpc_testing = true
@@ -57,7 +55,7 @@ func TestRpcServer(t *testing.T) {
 		ClientKey:            "1",
 		EtcdRpcBasePath:      "sean.tech/webkit/serving/rpc",
 		EtcdEndPoints:        []string{"127.0.0.1:2379"},
-		Logger:               logging.FormatLogger(),
+		Logger:               logging.Logger(),
 	}, func(server *server.Server) {
 		server.RegisterName("User", new(userServiceImpl), "")
 	})
