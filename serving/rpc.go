@@ -14,7 +14,6 @@ import (
 	"github.com/smallnest/rpcx/serverplugin"
 	"log"
 	"math"
-	"strings"
 	"sync"
 	"time"
 )
@@ -122,10 +121,16 @@ func RegisterPluginRateLimit(s *server.Server)  {
 	s.Plugins.Add(plugin)
 }
 
+
+
+var clientMap sync.Map
 /**
  * 创建rpc调用客户端，基于Etcd服务发现
  */
 func CreateRpcClient(serviceName string) client.XClient {
+	if c, ok := clientMap.Load(serviceName); ok {
+		return c.(client.XClient)
+	}
 	option := client.DefaultOption
 	option.Heartbeat = true
 	option.HeartbeatInterval = time.Second
@@ -136,35 +141,41 @@ func CreateRpcClient(serviceName string) client.XClient {
 			InsecureSkipVerify: true,
 		}
 	}
-	xclient := client.NewXClient(serviceName, client.Failover, client.RoundRobin, *getDiscovery(serviceName), option)
+	xclient := client.NewXClient(serviceName, client.Failover, client.RoundRobin, newDiscovery(serviceName), option)
+	clientMap.Store(serviceName, xclient)
 	return xclient
 }
-var discoveryMap sync.Map
-func getDiscovery(serviceName string) *client.ServiceDiscovery {
-	if discovery, ok := discoveryMap.Load(serviceName); ok {
-		return discovery.(*client.ServiceDiscovery)
-	}
+
+func newDiscovery(serviceName string) client.ServiceDiscovery {
 	var discovery client.ServiceDiscovery
 	if _rpc_testing == true {
 		discovery = client.NewInprocessDiscovery()
 	} else {
 		discovery = client.NewEtcdDiscovery(_rpcConfig.EtcdRpcBasePath, serviceName, _rpcConfig.EtcdEndPoints, nil)
 	}
-	discoveryMap.Store(serviceName, &discovery)
-	return &discovery
+	return discovery
 }
+
+
 
 type IRpcxLogger interface {
 	Rpcx(v ...interface{})
 	Error(v ...interface{})
 	Errorf(format string, v ...interface{})
 }
-type rpclogger struct {
+
+func (this *rpclogger) Register(name string, rcvr interface{}, metadata string) error {
+	this.register(rcvr, name, true)
+	return nil
 }
-var RpcLogger = &rpclogger{}
+
+func (this *rpclogger) Unregister(name string) error {
+	this.UnRegister(name)
+	return nil
+}
 
 func (this *rpclogger) PostReadRequest(ctx context.Context, r *protocol.Message, e error) error {
-	logPrint("PostReadRequest", ctx, r, e)
+	this.logPrint("PostReadRequest", ctx, r, MsgTypeReq, e)
 	return nil
 }
 
@@ -176,7 +187,7 @@ func (this *rpclogger) PreWriteResponse(ctx context.Context, req *protocol.Messa
 }
 
 func (this *rpclogger) PostWriteResponse(ctx context.Context, req *protocol.Message, resp *protocol.Message, e error) error {
-	logPrint("PostWriteResponse", ctx, resp, e)
+	this.logPrint("PostWriteResponse", ctx, resp, MsgTypeResp, e)
 	return nil
 }
 
@@ -187,7 +198,7 @@ func (this *rpclogger) PostWriteRequest(ctx context.Context, r *protocol.Message
 	return nil
 }
 
-func logPrint(prefix string, ctx context.Context, msg *protocol.Message, e error)  {
+func (this *rpclogger) logPrint(prefix string, ctx context.Context, msg *protocol.Message, msgType MsgType, e error)  {
 	if e != nil {
 		_rpcConfig.Logger.Errorf("[RPCX] %s error:%s", prefix, e.Error())
 		return
@@ -199,9 +210,9 @@ func logPrint(prefix string, ctx context.Context, msg *protocol.Message, e error
 		request_id = requisition.RequestId
 		user_name = requisition.UserName
 	}
-	payload := strings.ToValidUTF8(string(msg.Payload), ":")
-	var info = fmt.Sprintf("%s request_id:%d | user_name:%s | service_call:%s.%s | metadata:%s | payload:%s ",
-		prefix, request_id, user_name, msg.ServicePath, msg.ServiceMethod, msg.Metadata, payload)
+	data := this.paylodConvert(ctx, msg, msgType)
+	var info = fmt.Sprintf("%s request_id:%d | user_name:%s | service_call:%s.%s | metadata:%s | payload:%+v ",
+		prefix, request_id, user_name, msg.ServicePath, msg.ServiceMethod, msg.Metadata, data)
 	if logger, ok := _rpcConfig.Logger.(IRpcxLogger); ok {
 		logger.Rpcx(info)
 	} else {
