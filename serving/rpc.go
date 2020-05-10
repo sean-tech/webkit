@@ -14,6 +14,7 @@ import (
 	"github.com/smallnest/rpcx/serverplugin"
 	"log"
 	"math"
+	"net"
 	"sync"
 	"time"
 )
@@ -73,7 +74,7 @@ func RpcServerServe(config RpcConfig, registerFunc RpcRegisterFunc) {
 	}
 
 	address := fmt.Sprintf(":%d", config.RpcPort)
-	s.Plugins.Add(RpcLogger)
+	s.Plugins.Add(ServerLogger)
 	RegisterPluginEtcd(s, address)
 	RegisterPluginRateLimit(s)
 
@@ -142,6 +143,7 @@ func CreateRpcClient(serviceName string) client.XClient {
 		}
 	}
 	xclient := client.NewXClient(serviceName, client.Failover, client.RoundRobin, newDiscovery(serviceName), option)
+	xclient.GetPlugins().Add(ClientLogger)
 	clientMap.Store(serviceName, xclient)
 	return xclient
 }
@@ -164,41 +166,41 @@ type IRpcxLogger interface {
 	Errorf(format string, v ...interface{})
 }
 
-func (this *rpclogger) Register(name string, rcvr interface{}, metadata string) error {
+func (this *serverlogger) Register(name string, rcvr interface{}, metadata string) error {
 	this.register(rcvr, name, true)
 	return nil
 }
 
-func (this *rpclogger) Unregister(name string) error {
+func (this *serverlogger) Unregister(name string) error {
 	this.UnRegister(name)
 	return nil
 }
 
-func (this *rpclogger) PostReadRequest(ctx context.Context, r *protocol.Message, e error) error {
+func (this *serverlogger) PostReadRequest(ctx context.Context, r *protocol.Message, e error) error {
 	this.logPrint("PostReadRequest", ctx, r, MsgTypeReq, e)
 	return nil
 }
 
-func (this *rpclogger)PreHandleRequest(ctx context.Context, r *protocol.Message) error {
+func (this *serverlogger)PreHandleRequest(ctx context.Context, r *protocol.Message) error {
 	return nil
 }
-func (this *rpclogger) PreWriteResponse(ctx context.Context, req *protocol.Message, resp *protocol.Message) error {
+func (this *serverlogger) PreWriteResponse(ctx context.Context, req *protocol.Message, resp *protocol.Message) error {
 	return nil
 }
 
-func (this *rpclogger) PostWriteResponse(ctx context.Context, req *protocol.Message, resp *protocol.Message, e error) error {
+func (this *serverlogger) PostWriteResponse(ctx context.Context, req *protocol.Message, resp *protocol.Message, e error) error {
 	this.logPrint("PostWriteResponse", ctx, resp, MsgTypeResp, e)
 	return nil
 }
 
-func (this *rpclogger) PreWriteRequest(ctx context.Context) error {
+func (this *serverlogger) PreWriteRequest(ctx context.Context) error {
 	return nil
 }
-func (this *rpclogger) PostWriteRequest(ctx context.Context, r *protocol.Message, e error) error {
+func (this *serverlogger) PostWriteRequest(ctx context.Context, r *protocol.Message, e error) error {
 	return nil
 }
 
-func (this *rpclogger) logPrint(prefix string, ctx context.Context, msg *protocol.Message, msgType MsgType, e error)  {
+func (this *serverlogger) logPrint(prefix string, ctx context.Context, msg *protocol.Message, msgType MsgType, e error)  {
 	if e != nil {
 		_rpcConfig.Logger.Errorf("[RPCX] %s error:%s", prefix, e.Error())
 		return
@@ -218,4 +220,53 @@ func (this *rpclogger) logPrint(prefix string, ctx context.Context, msg *protoco
 	} else {
 		_rpcConfig.Logger.Infof("[RPCX] %s", info)
 	}
+}
+
+
+
+type clientLogger struct {}
+var ClientLogger = &clientLogger{}
+
+func (this *clientLogger) DoPreCall(ctx context.Context, servicePath, serviceMethod string, args interface{}) error {
+	return nil
+}
+
+// PostCallPlugin is invoked after the client calls a server.
+func (this *clientLogger) DoPostCall(ctx context.Context, servicePath, serviceMethod string, args interface{}, reply interface{}, err error) error {
+	if err != nil {
+		_rpcConfig.Logger.Errorf("[RPCX] DoPostCall %s.%s args:%+v reply:%+v error:%s", servicePath, serviceMethod, args, reply, err.Error())
+		return nil
+	}
+	var info = fmt.Sprintf("[RPCX] DoPostCall %s.%s args:%+v reply:%+v", servicePath, serviceMethod, args, reply)
+	if logger, ok := _rpcConfig.Logger.(IRpcxLogger); ok {
+		logger.Rpcx(info)
+	} else {
+		_rpcConfig.Logger.Infof("[RPCX] %s", info)
+	}
+	return nil
+}
+
+// ConnCreatedPlugin is invoked when the client connection has created.
+func (this *clientLogger) ConnCreated(conn net.Conn) (net.Conn, error) {
+	return conn, nil
+}
+
+// ClientConnectedPlugin is invoked when the client has connected the server.
+func (this *clientLogger) ClientConnected(conn net.Conn) (net.Conn, error) {
+	return conn, nil
+}
+
+// ClientConnectionClosePlugin is invoked when the connection is closing.
+func (this *clientLogger) ClientConnectionClose(net.Conn) error {
+	return nil
+}
+
+// ClientBeforeEncodePlugin is invoked when the message is encoded and sent.
+func (this *clientLogger) ClientBeforeEncode(*protocol.Message) error {
+	return nil
+}
+
+// ClientAfterDecodePlugin is invoked when the message is decoded.
+func (this *clientLogger) ClientAfterDecode(*protocol.Message) error {
+	return nil
 }

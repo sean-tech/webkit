@@ -13,11 +13,11 @@ import (
 	"unicode/utf8"
 )
 
-type rpclogger struct {
+type serverlogger struct {
 	serviceMapMu sync.RWMutex
 	serviceMap   map[string]*service
 }
-var RpcLogger = &rpclogger{sync.RWMutex{},
+var ServerLogger = &serverlogger{sync.RWMutex{},
 	make(map[string]*service),
 }
 
@@ -67,7 +67,7 @@ func isExportedOrBuiltinType(t reflect.Type) bool {
 	return isExported(t.Name()) || t.PkgPath() == ""
 }
 
-func (this *rpclogger) register(rcvr interface{}, name string, useName bool) (string, error) {
+func (this *serverlogger) register(rcvr interface{}, name string, useName bool) (string, error) {
 	service := new(service)
 	service.typ = reflect.TypeOf(rcvr)
 	service.rcvr = reflect.ValueOf(rcvr)
@@ -247,13 +247,13 @@ func (p *typePools) Get(t reflect.Type) interface{} {
 
 // UnregisterAll unregisters all services.
 // You can call this method when you want to shutdown/upgrade this node.
-func (this *rpclogger) UnregisterAll() {
+func (this *serverlogger) UnregisterAll() {
 	for k := range this.serviceMap {
 		delete(this.serviceMap, k)
 	}
 }
 
-func (this *rpclogger) UnRegister(name string) {
+func (this *serverlogger) UnRegister(name string) {
 	delete(this.serviceMap, name)
 }
 
@@ -264,7 +264,7 @@ const (
 	MsgTypeResp = 1
 )
 
-func (this *rpclogger) paylodConvert(ctx context.Context, msg *protocol.Message, msgType MsgType) interface{} {
+func (this *serverlogger) paylodConvert(ctx context.Context, msg *protocol.Message, msgType MsgType) interface{} {
 	serviceName := msg.ServicePath
 	methodName := msg.ServiceMethod
 
