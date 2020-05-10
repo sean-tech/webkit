@@ -201,24 +201,26 @@ func (this *serverlogger) PostWriteRequest(ctx context.Context, r *protocol.Mess
 }
 
 func (this *serverlogger) logPrint(prefix string, ctx context.Context, msg *protocol.Message, msgType MsgType, e error)  {
-	if e != nil {
-		_rpcConfig.Logger.Errorf("[RPCX] %s error:%s", prefix, e.Error())
-		return
-	}
-
 	var request_id uint64 = 0
 	var user_name string = ""
 	if requisition := foundation.GetRequisition(ctx); requisition != nil {
 		request_id = requisition.RequestId
 		user_name = requisition.UserName
 	}
+
+	if e != nil {
+		_rpcConfig.Logger.Errorf("[RPCX] %s request_id:%d user_name:%s service_call:%s.%s error:%s",
+			prefix, request_id, user_name, msg.ServicePath, msg.ServiceMethod, e.Error())
+		return
+	}
+
 	data := this.paylodConvert(ctx, msg, msgType)
-	var info = fmt.Sprintf("%s request_id:%d | user_name:%s | service_call:%s.%s | metadata:%s | payload:%+v ",
+	var info = fmt.Sprintf("%s request_id:%d user_name:%s service_call:%s.%s metadata:%s payload:%+v",
 		prefix, request_id, user_name, msg.ServicePath, msg.ServiceMethod, msg.Metadata, data)
 	if logger, ok := _rpcConfig.Logger.(IRpcxLogger); ok {
 		logger.Rpcx(info)
 	} else {
-		_rpcConfig.Logger.Infof("[RPCX] %s", info)
+		_rpcConfig.Logger.Infof("[RPCX] %s\n", info)
 	}
 }
 
@@ -233,11 +235,21 @@ func (this *clientLogger) DoPreCall(ctx context.Context, servicePath, serviceMet
 
 // PostCallPlugin is invoked after the client calls a server.
 func (this *clientLogger) DoPostCall(ctx context.Context, servicePath, serviceMethod string, args interface{}, reply interface{}, err error) error {
+	var request_id uint64 = 0
+	var user_name string = ""
+	if requisition := foundation.GetRequisition(ctx); requisition != nil {
+		request_id = requisition.RequestId
+		user_name = requisition.UserName
+	}
+
 	if err != nil {
-		_rpcConfig.Logger.Errorf("[RPCX] DoPostCall %s.%s args:%+v reply:%+v error:%s", servicePath, serviceMethod, args, reply, err.Error())
+		_rpcConfig.Logger.Errorf("[RPCX] DoPostCall request_id:%d user_name:%s service_call:%s.%s args:%+v reply:%+v error:%s",
+			request_id, user_name, servicePath, serviceMethod, args, reply, err.Error())
 		return nil
 	}
-	var info = fmt.Sprintf("[RPCX] DoPostCall %s.%s args:%+v reply:%+v", servicePath, serviceMethod, args, reply)
+
+	var info = fmt.Sprintf("[RPCX] DoPostCall request_id:%d user_name:%s service_call:%s.%s args:%+v reply:%+v",
+		request_id, user_name, servicePath, serviceMethod, args, reply)
 	if logger, ok := _rpcConfig.Logger.(IRpcxLogger); ok {
 		logger.Rpcx(info)
 	} else {
