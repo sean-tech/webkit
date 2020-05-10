@@ -42,6 +42,7 @@ func NewMysqlManager(mysqlConfig MysqlConfig) IMysqlManager {
 }
 
 type mysqlManagerImpl struct {
+	opened bool
 	config MysqlConfig
 	/** 数据中心id 关联 db Map **/
 	dbMap map[int]*sqlx.DB
@@ -54,6 +55,9 @@ type mysqlManagerImpl struct {
  * db: DB 对象
  */
 func (this *mysqlManagerImpl) Open() {
+	if this.opened {
+		return
+	}
 	if err := validate.ValidateParameter(this.config); err != nil {
 		log.Fatalf("mysql config validate failed:%s", err.Error())
 		return
@@ -71,6 +75,7 @@ func (this *mysqlManagerImpl) Open() {
 		this.dbMap[id] = db
 		this.dataCenterCount += 1
 	}
+	this.opened = true
 }
 
 /**
