@@ -1,4 +1,4 @@
-package serving
+package gohttp
 
 type StatusCode int
 type StatusMsg string

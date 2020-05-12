@@ -1,4 +1,4 @@
-package serving
+package gohttp
 
 import (
 	"encoding/base64"
@@ -31,11 +31,11 @@ func getSecretStorage() ISecretStorage {
 	if _httpConfig.SecretStorage != nil {
 		return _httpConfig.SecretStorage
 	}
-	return NewMemeoryStorage()
+	return _memoryStorage
 }
 
 type ISecretManager interface {
-	GenerateToken(userId uint64, userName string, isAdministrotor bool, JwtSecret string, JwtIssuer string, JwtExpiresTime time.Duration) (string, error)
+	GenerateToken(userId uint64, userName string, JwtSecret string, JwtIssuer string, JwtExpiresTime time.Duration) (string, error)
 	ParseToken(token string, JwtSecret string, JwtIssuer string) (*TokenInfo, error)
 	CheckToken(token string, JwtSecret string, JwtIssuer string) error
 	GetAesKey(userName string) (key string, err error)
@@ -43,6 +43,11 @@ type ISecretManager interface {
 	InterceptRsa() gin.HandlerFunc
 	InterceptAes() gin.HandlerFunc
 }
+
+const (
+	key_prefix_token = "sean-tech/webkit/keys/gohttp/token/"
+	key_prefix_aeskey = "sean-tech/webkit/keys/gohttp/aeskey/"
+)
 
 var (
 	_secretManagerOnce sync.Once
@@ -62,7 +67,7 @@ type secretManagerImpl struct {
 /**
  * 生成token
  */
-func (this *secretManagerImpl) GenerateToken(userId uint64, userName string, isAdministrotor bool, JwtSecret string, JwtIssuer string, JwtExpiresTime time.Duration) (string, error) {
+func (this *secretManagerImpl) GenerateToken(userId uint64, userName string, JwtSecret string, JwtIssuer string, JwtExpiresTime time.Duration) (string, error) {
 	expireTime := time.Now().Add(JwtExpiresTime)
 	iat := time.Now().Unix()
 	//jti := _httpConfig.IdWorker.GetId()
@@ -83,10 +88,12 @@ func (this *secretManagerImpl) GenerateToken(userId uint64, userName string, isA
 	if err != nil {
 		return "", foundation.NewError(STATUS_CODE_AUTH_TOKEN_GENERATE_FAILED, STATUS_MSG_AUTH_TOKEN_GENERATE_FAILED)
 	}
-	if err := getSecretStorage().Set(userName, token, JwtExpiresTime); err != nil {
+	var key_token = key_prefix_token + userName
+	if err := getSecretStorage().Set(key_token, token, JwtExpiresTime); err != nil {
 		return "", foundation.NewError(STATUS_CODE_AUTH_TOKEN_GENERATE_FAILED, STATUS_MSG_AUTH_TOKEN_GENERATE_FAILED)
 	}
-	if err := getSecretStorage().Set(userName, hex.EncodeToString(encrypt.GetAes().GenerateKey()), JwtExpiresTime); err != nil {
+	var key_aeskey = key_prefix_aeskey + userName
+	if err := getSecretStorage().Set(key_aeskey, hex.EncodeToString(encrypt.GetAes().GenerateKey()), JwtExpiresTime); err != nil {
 		return "", foundation.NewError(STATUS_CODE_AUTH_TOKEN_GENERATE_FAILED, STATUS_MSG_AUTH_TOKEN_GENERATE_FAILED)
 	}
 	return token, nil
@@ -115,7 +122,8 @@ func (this *secretManagerImpl) ParseToken(token string, JwtSecret string, JwtIss
 	if !ok {
 		return nil, foundation.NewError(STATUS_CODE_AUTH_TYPE_ERROR, STATUS_MSG_AUTH_TYPE_ERROR)
 	}
-	savedToken, err := getSecretStorage().Get(claims.UserName)
+	var key_token = key_prefix_token + claims.UserName
+	savedToken, err := getSecretStorage().Get(key_token)
 	if err != nil {
 		return nil, foundation.NewError(STATUS_CODE_AUTH_CHECK_TOKEN_FAILED, STATUS_MSG_AUTH_CHECK_TOKEN_FAILED)
 	}
@@ -139,7 +147,8 @@ func (this *secretManagerImpl) CheckToken(token string, JwtSecret string, JwtIss
 }
 
 func (this *secretManagerImpl) GetAesKey(userName string) (key string, err error) {
-	return getSecretStorage().Get(userName)
+	var key_aeskey = key_prefix_aeskey + userName
+	return getSecretStorage().Get(key_aeskey)
 }
 
 /**
@@ -236,7 +245,7 @@ func (this *secretManagerImpl) InterceptAes() gin.HandlerFunc {
 			code = STATUS_CODE_SECRET_CHECK_FAILED
 		} else if err := validate.ValidateParameter(params); err != nil { // validate
 			code = STATUS_CODE_INVALID_PARAMS
-		} else if key, err = getSecretStorage().Get(foundation.GetRequisition(ctx).UserName); err != nil { // get key
+		} else if key, err = getSecretStorage().Get(key_prefix_aeskey + foundation.GetRequisition(ctx).UserName); err != nil { // get key
 			code = STATUS_CODE_SECRET_CHECK_FAILED
 		} else if encrypted, err = base64.StdEncoding.DecodeString(params.Secret); err != nil { // decode
 			code = STATUS_CODE_SECRET_CHECK_FAILED
@@ -270,6 +279,7 @@ func (this *secretManagerImpl) InterceptAes() gin.HandlerFunc {
 func NewMemeoryStorage() ISecretStorage {
 	return new(SecretMemeoryStorageImpl)
 }
+var _memoryStorage = NewMemeoryStorage()
 
 // 内存存储实现
 type SecretMemeoryStorageImpl struct {
@@ -279,10 +289,12 @@ type SecretMemeoryStorageImpl struct {
 func (this *SecretMemeoryStorageImpl) Set(key string, value interface{}, expiresTime time.Duration) error {
 	this.memoryStorageMap.Store(key, value)
 	// 定时删除
-	select {
-	case <- time.After(expiresTime):
-		this.Delete(key)
-	}
+	go func(storage *SecretMemeoryStorageImpl, expiresTime time.Duration) {
+		select {
+		case <- time.After(expiresTime):
+			storage.Delete(key)
+		}
+	}(this, expiresTime)
 	return nil
 }
 

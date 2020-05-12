@@ -1,4 +1,4 @@
-package serving
+package gohttp
 
 import (
 	"fmt"
@@ -25,7 +25,7 @@ func TestJwt(t *testing.T) {
 
 
 type iTokenManager interface {
-	GenerateToken(userId uint64, userName string, isAdministrotor bool, JwtSecret string, JwtIssuer string, JwtExpiresTime time.Duration) (string, error)
+	GenerateToken(userId uint64, userName string, JwtSecret string, JwtIssuer string, JwtExpiresTime time.Duration) (string, error)
 	CheckToken(token string, JwtSecret string, JwtIssuer string) error
 }
 func TestToken(t *testing.T) {
@@ -34,7 +34,7 @@ func TestToken(t *testing.T) {
 	var tokenMgr iTokenManager = GetSecretManager()
 
 	var expires = 30 * time.Second
-	token, err := tokenMgr.GenerateToken(1230090123, "seantest1", false, secret, issuer, expires)
+	token, err := tokenMgr.GenerateToken(1230090123, "seantest1", secret, issuer, expires)
 	if err != nil {
 		t.Error(err)
 		return

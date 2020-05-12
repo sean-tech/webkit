@@ -1,8 +1,9 @@
-package serving
+package gorpc
 
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"github.com/rcrowley/go-metrics"
 	"github.com/sean-tech/gokit/foundation"
@@ -12,6 +13,7 @@ import (
 	"github.com/smallnest/rpcx/protocol"
 	"github.com/smallnest/rpcx/server"
 	"github.com/smallnest/rpcx/serverplugin"
+	"io/ioutil"
 	"log"
 	"math"
 	"net"
@@ -27,10 +29,10 @@ type RpcConfig struct {
 	WriteTimeout          	time.Duration	`json:"write_timeout" validate:"required,gte=1"`
 	// tls
 	SecretOpen 				bool   			`json:"secret_open"`
-	ServerCert 				string 			`json:"server_cert" validate:"required,gte=1"`
-	ServerKey  				string			`json:"server_key" validate:"required,gte=1"`
-	ClientCert 				string 			`json:"client_cert" validate:"required,gte=1"`
-	ClientKey  				string 			`json:"client_key" validate:"required,gte=1"`
+	ServerPemPath 			string 			`json:"server_pem_path" validate:"required,gte=1"`
+	ServerKeyPath  			string			`json:"server_key_path" validate:"required,gte=1"`
+	CAPemPath 				string 			`json:"ca_pem_path" validate:"required,gte=1"`
+	CABaseName 				string 			`json:"ca_base_name" validate:"required,gte=1"`
 	// etcd
 	EtcdRpcBasePath 		string			`json:"etcd_rpc_base_path" validate:"required,gte=1"`
 	EtcdEndPoints 			[]string		`json:"etcd_end_points" validate:"required,gte=1,dive,tcp_addr"`
@@ -41,7 +43,7 @@ type RpcConfig struct {
 type RpcRegisterFunc func(server *server.Server)
 
 var (
-	_rpcConfig RpcConfig
+	_rpcConfig   RpcConfig
 	_rpc_testing bool = false
 )
 
@@ -59,16 +61,28 @@ func RpcServerServe(config RpcConfig, registerFunc RpcRegisterFunc) {
 
 	var s *server.Server
 	if config.SecretOpen {
-		//cert, err := tls.LoadX509KeyPair(config.App.RuntimeRootPath + config.App.TLSCerPath, config.App.RuntimeRootPath + config.App.TLSKeyPath)
-		cert, err := tls.X509KeyPair([]byte(config.ServerCert), []byte(config.ServerKey))
+		cert, err := tls.LoadX509KeyPair(_rpcConfig.ServerPemPath, _rpcConfig.ServerKeyPath)
+		//cert, err := tls.X509KeyPair([]byte(config.ServerCert), []byte(config.ServerKey))
 		if err != nil {
 			log.Fatal(err)
 			return
 		}
-		tlsConfig := &tls.Config{
-			Certificates: []tls.Certificate{cert},
+		caBytes, err := ioutil.ReadFile(_rpcConfig.CAPemPath)
+		if err != nil {
+			panic("Unable to read cert.pem")
 		}
-		s = server.NewServer(server.WithTLSConfig(tlsConfig))
+		certPool := x509.NewCertPool()
+		ok := certPool.AppendCertsFromPEM(caBytes)
+		if !ok {
+			panic("failed to parse root certificate")
+		}
+		config := &tls.Config{
+			Certificates: []tls.Certificate{cert},
+			ClientAuth:   tls.RequireAndVerifyClientCert,
+			ClientCAs:    certPool,
+		}
+		s = server.NewServer(server.WithTLSConfig(config))
+
 	} else {
 		s = server.NewServer(server.WithReadTimeout(config.ReadTimeout))
 	}
@@ -138,10 +152,30 @@ func CreateRpcClient(serviceName string) client.XClient {
 	option.ReadTimeout = _rpcConfig.ReadTimeout
 	option.WriteTimeout = _rpcConfig.WriteTimeout
 	if _rpcConfig.SecretOpen {
+		cert, err := tls.LoadX509KeyPair(_rpcConfig.ServerPemPath, _rpcConfig.ServerKeyPath)
+		if err != nil {
+			_rpcConfig.Logger.Errorf("[RPCX] unable to read cert.pem and cert.key : %s", err.Error())
+			goto OPTION_SECRET_SETED
+		}
+		caBytes, err := ioutil.ReadFile(_rpcConfig.CAPemPath)
+		if err != nil {
+			_rpcConfig.Logger.Errorf("[RPCX] unable to read cert.pem : %s", err.Error())
+			goto OPTION_SECRET_SETED
+		}
+		certPool := x509.NewCertPool()
+		ok := certPool.AppendCertsFromPEM(caBytes)
+		if !ok {
+			_rpcConfig.Logger.Errorf("[RPCX] failed to parse root certificate : %s", err.Error())
+			goto OPTION_SECRET_SETED
+		}
 		option.TLSConfig = &tls.Config{
-			InsecureSkipVerify: true,
+			RootCAs:            certPool,
+			Certificates:       []tls.Certificate{cert},
+			InsecureSkipVerify: false,
+			ServerName: serviceName + "." + _rpcConfig.CABaseName,
 		}
 	}
+OPTION_SECRET_SETED:
 	xclient := client.NewXClient(serviceName, client.Failover, client.RoundRobin, newDiscovery(serviceName), option)
 	xclient.GetPlugins().Add(ClientLogger)
 	clientMap.Store(serviceName, xclient)

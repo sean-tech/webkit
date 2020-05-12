@@ -1,4 +1,4 @@
-package serving
+package gorpc
 
 import (
 	"context"
@@ -49,10 +49,10 @@ func TestRpcServer(t *testing.T) {
 		ReadTimeout:          60 * time.Second,
 		WriteTimeout:         60 * time.Second,
 		SecretOpen:           false,
-		ServerCert:           "1",
-		ServerKey:            "1",
-		ClientCert:           "1",
-		ClientKey:            "1",
+		ServerPemPath:		  "/Users/lyra/Desktop/Go/secret/webkit/server1.pem",
+		ServerKeyPath:		  "/Users/lyra/Desktop/Go/secret/webkit/server1.key",
+		CAPemPath:			  "/Users/lyra/Desktop/Go/secret/webkit/ca.pem",
+		CABaseName:			  "ex.sean",
 		EtcdRpcBasePath:      "sean.tech/webkit/serving/rpc",
 		EtcdEndPoints:        []string{"127.0.0.1:2379"},
 		Logger:               logging.Logger(),
