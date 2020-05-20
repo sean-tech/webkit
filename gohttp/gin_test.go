@@ -39,23 +39,22 @@ func TestGinServer(t *testing.T) {
 		LogSavePath:     "/Users/lyra/Desktop/",
 		LogPrefix:       "gintest",
 	})
+	serverPubKeyBytes, _ := ioutil.ReadFile("/Users/lyra/Desktop/Doc/安全方案/businessS/spubkey.pem")
+	serverPriKeyBytes, _ := ioutil.ReadFile("/Users/lyra/Desktop/Doc/安全方案/businessS/sprivkey.pem")
+	clientPubKeyBytes, _ := ioutil.ReadFile("/Users/lyra/Desktop/Doc/安全方案/businessC/cpubkey.pem")
 	// server start
 	HttpServerServe(HttpConfig{
-		RunMode:        "debug",
-		WorkerId:       0,
-		HttpPort:       8001,
-		ReadTimeout:    60 * time.Second,
-		WriteTimeout:   60 * time.Second,
-		JwtSecret:      "webkit/serving/jwtsecret/token@20200427",
-		JwtIssuer:      "sean.tech/webkit/user",
-		JwtExpiresTime: 36 * time.Hour,
-		SecretOpen:     false,
-		ServerPubKey:   "",
-		ServerPriKey:   "",
-		ClientPubKey:   "",
-		Logger:         logging.Logger(),
-		SecretStorage:  NewMemeoryStorage(),
-	}, RegisterApi)
+		RunMode:          "test",
+		WorkerId:         0,
+		HttpPort:         8001,
+		ReadTimeout:      60 * time.Second,
+		WriteTimeout:     60 * time.Second,
+		Rsa: 		  &RsaConfig{
+			ServerPubKey:     string(serverPubKeyBytes),
+			ServerPriKey:     string(serverPriKeyBytes),
+			ClientPubKey:     string(clientPubKeyBytes),
+		},
+	}, logging.Logger(), RegisterApi)
 }
 
 func RegisterApi(engine *gin.Engine) {

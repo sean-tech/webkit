@@ -19,12 +19,12 @@ import (
 
 type secret_method string
 const (
-	key_request_id 					= "gohttp/key_request_id"
-	key_ctx_requestion              = "gohttp/key_ctx_requestion"
-	_ secret_method 				= ""
-	secret_method_rsa               = "secret_method_rsa"
-	secret_method_aes               = "secret_method_aes"
-	secret_method_nouse             = "secret_method_nouse"
+	key_request_id 						= "gohttp/key_request_id"
+	key_ctx_requestion              	= "gohttp/key_ctx_requestion"
+	_ secret_method 					= ""
+	secret_method_rsa secret_method 	= "secret_method_rsa"
+	secret_method_aes secret_method    	= "secret_method_aes"
+	secret_method_nouse secret_method  	= "secret_method_nouse"
 )
 
 type CError interface {
@@ -38,42 +38,52 @@ type HttpConfig struct {
 	HttpPort            int				`json:"http_port" validate:"required,min=1,max=10000"`
 	ReadTimeout         time.Duration	`json:"read_timeout" validate:"required,gte=1"`
 	WriteTimeout        time.Duration	`json:"write_timeout" validate:"required,gte=1"`
-	// jwt
-	JwtSecret 			string			`json:"jwt_secret" validate:"required,gte=1"`
-	JwtIssuer 			string			`json:"jwt_issuer" validate:"required,gte=1"`
-	JwtExpiresTime 		time.Duration	`json:"jwt_expires_time" validate:"required,gte=1"`
-	// storage
-	Logger       		IGinLogger    	`json:"logger" validate:"required"`
-	SecretStorage 		ISecretStorage  `json:"secret_storage" validate:"required"`
-	// secret
-	SecretOpen			bool			`json:"secret_open"`
-	ServerPubKey 		string 			`json:"server_pub_key"`
-	ServerPriKey 		string 			`json:"server_pri_key"`
-	ClientPubKey 		string 			`json:"client_pub_key"`
+	// rsa
+	RsaOpen				bool			`json:"rsa_open"`
+	Rsa 				*RsaConfig 		`json:"rsa"`
 }
+
+type RsaConfig struct {
+	ServerPubKey 		string 			`json:"server_pub_key" validate:"required"`
+	ServerPriKey		string 			`json:"server_pri_key" validate:"required"`
+	ClientPubKey 		string 			`json:"client_pub_key" validate:"required"`
+}
+
 /** 服务注册回调函数 **/
 type GinRegisterFunc func(engine *gin.Engine)
 
 var (
-	_httpConfig HttpConfig
-	_idWorker   foundation.SnowId
+	_config   	HttpConfig
+	_idWorker 	foundation.SnowId
+	_logger 	IGinLogger
 )
 
 /**
  * 启动 api server
  * handler: 接口实现serveHttp的对象
  */
-func HttpServerServe(config HttpConfig, registerFunc GinRegisterFunc) {
+func HttpServerServe(config HttpConfig, logger IGinLogger, registerFunc GinRegisterFunc) {
 	if err := validate.ValidateParameter(config); err != nil {
 		log.Fatal(err)
 	}
-	_httpConfig = config
+	if config.RsaOpen {
+		if config.Rsa == nil {
+			log.Fatal("server start error : http secret config is nil")
+		}
+		if err := validate.ValidateParameter(config.Rsa); err != nil {
+			log.Fatal(err)
+		}
+	}
+	_config = config
 	_idWorker, _ = foundation.NewWorker(config.WorkerId)
+	if logger != nil {
+		_logger = logger
+	}
 
 	// gin
 	gin.SetMode(config.RunMode)
 	gin.DisableConsoleColor()
-	gin.DefaultWriter = io.MultiWriter(config.Logger.Writer(), os.Stdout)
+	gin.DefaultWriter = io.MultiWriter(_logger.Writer(), os.Stdout)
 
 	// engine
 	//engine := gin.Default()
@@ -178,7 +188,7 @@ func (g *Gin) BindParameter(parameter interface{}) error {
 		}
 		g.LogRequestParam(parameter)
 		return nil
-	case secret_method_aes:
+	case secret_method_aes:fallthrough
 	case secret_method_rsa:
 		if err := json.Unmarshal(g.getRequisition().Params, parameter); err != nil {
 			return foundation.NewError(STATUS_CODE_INVALID_PARAMS, err.Error())
@@ -210,8 +220,8 @@ func (g *Gin) ResponseData(data interface{}) {
 		return
 	case secret_method_rsa:
 		jsonBytes, _ := json.Marshal(data)
-		if secretBytes, err := encrypt.GetRsa().Encrypt(_httpConfig.ClientPubKey, jsonBytes); err == nil {
-			if signBytes, err := encrypt.GetRsa().Sign(_httpConfig.ServerPriKey, jsonBytes); err == nil {
+		if secretBytes, err := encrypt.GetRsa().Encrypt(_config.Rsa.ClientPubKey, jsonBytes); err == nil {
+			if signBytes, err := encrypt.GetRsa().Sign(_config.Rsa.ServerPriKey, jsonBytes); err == nil {
 				sign := base64.StdEncoding.EncodeToString(signBytes)
 				g.LogResponseInfo(code, code.Msg(), jsonBytes, sign)
 				g.Response(code, code.Msg(), base64.StdEncoding.EncodeToString(secretBytes), sign)
@@ -258,34 +268,30 @@ type IGinLogger interface {
 }
 
 func (g *Gin) LogRequestParam(parameter interface{}) {
+	if _logger == nil {
+		return
+	}
 	var requestion = foundation.GetRequisition(g.Ctx)
 	if jsonBytes, ok := parameter.([]byte); ok {
-		_httpConfig.Logger.Gin("request_id:", requestion.RequestId, "user_name:", requestion.UserName, " | params:", string(jsonBytes), "\n")
+		_logger.Gin("request_id:", requestion.RequestId, "user_name:", requestion.UserName, " | params:", string(jsonBytes), "\n")
 	} else if jsonBytes, err := json.Marshal(parameter); err == nil {
-		_httpConfig.Logger.Gin("request_id:", requestion.RequestId, "user_name:", requestion.UserName, " | params:", string(jsonBytes), "\n")
+		_logger.Gin("request_id:", requestion.RequestId, "user_name:", requestion.UserName, " | params:", string(jsonBytes), "\n")
 	} else {
-		_httpConfig.Logger.Gin("request_id:", requestion.RequestId, "user_name:", requestion.UserName, " | params:", parameter, "\n")
+		_logger.Gin("request_id:", requestion.RequestId, "user_name:", requestion.UserName, " | params:", parameter, "\n")
 	}
 }
 
 func (g *Gin) LogResponseInfo(statusCode StatusCode, msg string, data interface{}, sign string) {
+	if _logger == nil {
+		return
+	}
 	var requestion = foundation.GetRequisition(g.Ctx)
 	if jsonBytes, ok := data.([]byte); ok {
-		_httpConfig.Logger.Gin("request_id:", requestion.RequestId, "user_name:", requestion.UserName, " | response code:", statusCode, " | msg:", msg, " | data:", string(jsonBytes), " | sign:", sign, "\n")
+		_logger.Gin("request_id:", requestion.RequestId, "user_name:", requestion.UserName, " | response code:", statusCode, " | msg:", msg, " | data:", string(jsonBytes), " | sign:", sign, "\n")
 	} else if jsonBytes, err := json.Marshal(data); err == nil {
-		_httpConfig.Logger.Gin("request_id:", requestion.RequestId, "user_name:", requestion.UserName, " | response code:", statusCode, " | msg:", msg, " | data:", string(jsonBytes), " | sign:", sign, "\n")
+		_logger.Gin("request_id:", requestion.RequestId, "user_name:", requestion.UserName, " | response code:", statusCode, " | msg:", msg, " | data:", string(jsonBytes), " | sign:", sign, "\n")
 	} else {
-		_httpConfig.Logger.Gin("request_id:", requestion.RequestId, "user_name:", requestion.UserName, " | response code:", statusCode, " | msg:", msg, " | data:", data, " | sign:", sign, "\n")
+		_logger.Gin("request_id:", requestion.RequestId, "user_name:", requestion.UserName, " | response code:", statusCode, " | msg:", msg, " | data:", data, " | sign:", sign, "\n")
 	}
 }
-
-
-
-
-
-
-
-
-
-
 

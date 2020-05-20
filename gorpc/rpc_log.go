@@ -4,14 +4,77 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/sean-tech/gokit/foundation"
 	"github.com/smallnest/rpcx/log"
 	"github.com/smallnest/rpcx/protocol"
 	"github.com/smallnest/rpcx/share"
+	"net"
 	"reflect"
 	"sync"
 	"unicode"
 	"unicode/utf8"
 )
+
+type clientLogger struct {}
+var ClientLogger = &clientLogger{}
+
+func (this *clientLogger) DoPreCall(ctx context.Context, servicePath, serviceMethod string, args interface{}) error {
+	return nil
+}
+
+// PostCallPlugin is invoked after the client calls a server.
+func (this *clientLogger) DoPostCall(ctx context.Context, servicePath, serviceMethod string, args interface{}, reply interface{}, err error) error {
+	var request_id uint64 = 0
+	var user_name string = ""
+	if requisition := foundation.GetRequisition(ctx); requisition != nil {
+		request_id = requisition.RequestId
+		user_name = requisition.UserName
+	}
+
+	if err != nil {
+		if _logger != nil {
+			_logger.Errorf("[RPCX] DoPostCall request_id:%d user_name:%s service_call:%s.%s args:%+v reply:%+v error:%s",
+				request_id, user_name, servicePath, serviceMethod, args, reply, err.Error())
+		}
+		return nil
+	}
+
+	var info = fmt.Sprintf("[RPCX] DoPostCall request_id:%d user_name:%s service_call:%s.%s args:%+v reply:%+v",
+		request_id, user_name, servicePath, serviceMethod, args, reply)
+	if logger, ok := _logger.(IRpcxLogger); ok {
+		logger.Rpcx(info)
+	} else if _logger != nil {
+		_logger.Infof("[RPCX] %s", info)
+	}
+	return nil
+}
+
+// ConnCreatedPlugin is invoked when the client connection has created.
+func (this *clientLogger) ConnCreated(conn net.Conn) (net.Conn, error) {
+	return conn, nil
+}
+
+// ClientConnectedPlugin is invoked when the client has connected the server.
+func (this *clientLogger) ClientConnected(conn net.Conn) (net.Conn, error) {
+	return conn, nil
+}
+
+// ClientConnectionClosePlugin is invoked when the connection is closing.
+func (this *clientLogger) ClientConnectionClose(net.Conn) error {
+	return nil
+}
+
+// ClientBeforeEncodePlugin is invoked when the message is encoded and sent.
+func (this *clientLogger) ClientBeforeEncode(*protocol.Message) error {
+	return nil
+}
+
+// ClientAfterDecodePlugin is invoked when the message is decoded.
+func (this *clientLogger) ClientAfterDecode(*protocol.Message) error {
+	return nil
+}
+
+
 
 type serverlogger struct {
 	serviceMapMu sync.RWMutex
@@ -19,6 +82,66 @@ type serverlogger struct {
 }
 var ServerLogger = &serverlogger{sync.RWMutex{},
 	make(map[string]*service),
+}
+
+func (this *serverlogger) Register(name string, rcvr interface{}, metadata string) error {
+	this.register(rcvr, name, true)
+	return nil
+}
+
+func (this *serverlogger) Unregister(name string) error {
+	this.UnRegister(name)
+	return nil
+}
+
+func (this *serverlogger) PostReadRequest(ctx context.Context, r *protocol.Message, e error) error {
+	this.logPrint("PostReadRequest", ctx, r, MsgTypeReq, e)
+	return nil
+}
+
+func (this *serverlogger)PreHandleRequest(ctx context.Context, r *protocol.Message) error {
+	return nil
+}
+func (this *serverlogger) PreWriteResponse(ctx context.Context, req *protocol.Message, resp *protocol.Message) error {
+	return nil
+}
+
+func (this *serverlogger) PostWriteResponse(ctx context.Context, req *protocol.Message, resp *protocol.Message, e error) error {
+	this.logPrint("PostWriteResponse", ctx, resp, MsgTypeResp, e)
+	return nil
+}
+
+func (this *serverlogger) PreWriteRequest(ctx context.Context) error {
+	return nil
+}
+func (this *serverlogger) PostWriteRequest(ctx context.Context, r *protocol.Message, e error) error {
+	return nil
+}
+
+func (this *serverlogger) logPrint(prefix string, ctx context.Context, msg *protocol.Message, msgType MsgType, e error)  {
+	var request_id uint64 = 0
+	var user_name string = ""
+	if requisition := foundation.GetRequisition(ctx); requisition != nil {
+		request_id = requisition.RequestId
+		user_name = requisition.UserName
+	}
+
+	if e != nil {
+		if _logger != nil {
+			_logger.Errorf("[RPCX] %s request_id:%d user_name:%s service_call:%s.%s error:%s",
+				prefix, request_id, user_name, msg.ServicePath, msg.ServiceMethod, e.Error())
+		}
+		return
+	}
+
+	data := this.paylodConvert(ctx, msg, msgType)
+	var info = fmt.Sprintf("%s request_id:%d user_name:%s service_call:%s.%s metadata:%s payload:%+v",
+		prefix, request_id, user_name, msg.ServicePath, msg.ServiceMethod, msg.Metadata, data)
+	if logger, ok := _logger.(IRpcxLogger); ok {
+		logger.Rpcx(info)
+	} else if _logger != nil {
+		_logger.Infof("[RPCX] %s\n", info)
+	}
 }
 
 

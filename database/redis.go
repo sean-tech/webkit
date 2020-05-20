@@ -3,11 +3,13 @@ package database
 import (
 	"fmt"
 	"github.com/go-redis/redis/v7"
+	"sync"
 	"time"
 )
 
 type IRedisManager interface {
 	Open()
+	Client() *redis.Client
 	Set(key string, value interface{}, expiration time.Duration) error
 	Get(key string) (string, error)
 	Delete(key string)
@@ -21,6 +23,26 @@ type RedisConfig struct{
 	MaxIdle     int				`json:"max_idle" validate:"required,min=1"`
 	MaxActive   int				`json:"max_active" validate:"required,min=1"`
 	IdleTimeout time.Duration	`json:"idle_timeout" validate:"required,gte=1"`
+}
+
+var (
+	_redisConfig RedisConfig
+	_redisManagerOnce sync.Once
+	_redisManager     IRedisManager
+)
+
+/**
+ * 根据配置接口对象初始化
+ */
+func SetupRedis(redisConfig RedisConfig)  {
+	_redisConfig = redisConfig
+}
+
+func Redis() IRedisManager {
+	_redisManagerOnce.Do(func() {
+		_redisManager = NewRedisManager(_redisConfig)
+	})
+	return _redisManager
 }
 
 func NewRedisManager(redisConfig RedisConfig) IRedisManager {
@@ -51,6 +73,13 @@ func (this *redisManagerImpl) Open() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+/**
+ * redis client
+ */
+func (this *redisManagerImpl) Client() *redis.Client {
+	return this.client
 }
 
 /**

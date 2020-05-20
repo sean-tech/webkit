@@ -7,6 +7,7 @@ import (
 	"github.com/sean-tech/gokit/logging"
 	"github.com/smallnest/rpcx/client"
 	"github.com/smallnest/rpcx/server"
+	"io/ioutil"
 	"log"
 	"testing"
 	"time"
@@ -41,27 +42,37 @@ func TestRpcServer(t *testing.T) {
 		LogSavePath:     "/Users/lyra/Desktop/",
 		LogPrefix:       "rpctest",
 	})
+	ServerCertBytes, _ := ioutil.ReadFile("/Users/lyra/Desktop/Go/secret/webkit/server1.pem")
+	ServerKeyBytes, _ := ioutil.ReadFile("/Users/lyra/Desktop/Go/secret/webkit/server1.key")
+	CACertBytes, _ := ioutil.ReadFile("/Users/lyra/Desktop/Go/secret/webkit/ca.pem")
 	_rpc_testing = true
-	RpcServerServe(RpcConfig{
+	ServerServe(RpcConfig{
 		RunMode:              "debug",
 		RpcPort:              9001,
 		RpcPerSecondConnIdle: 500,
 		ReadTimeout:          60 * time.Second,
 		WriteTimeout:         60 * time.Second,
-		SecretOpen:           false,
-		ServerPemPath:		  "/Users/lyra/Desktop/Go/secret/webkit/server1.pem",
-		ServerKeyPath:		  "/Users/lyra/Desktop/Go/secret/webkit/server1.key",
-		CAPemPath:			  "/Users/lyra/Desktop/Go/secret/webkit/ca.pem",
-		CABaseName:			  "ex.sean",
+		TokenSecret: "asdasd",
+		TokenIssuer: "zhsa",
+		TlsOpen: true,
+		Tls: &TlsConfig{
+			ServerCert:		  string(ServerCertBytes),
+			ServerKey:		  string(ServerKeyBytes),
+			CACert:			  string(CACertBytes),
+			CACommonName:			  "ex.sean",
+		},
+		EtcdRpcUserName: "root",
+		EtcdRpcPassword: "etcd.user.root.pwd",
 		EtcdRpcBasePath:      "sean.tech/webkit/serving/rpc",
 		EtcdEndPoints:        []string{"127.0.0.1:2379"},
-		Logger:               logging.Logger(),
-	}, func(server *server.Server) {
+	},
+		logging.Logger(),
+		func(server *server.Server) {
 		server.RegisterName("User", new(userServiceImpl), "")
 	})
 
 	var user = new(UserInfo)
-	client := CreateRpcClient("User")
+	client := CreateClient("User")
 	if err := client.Call(context.Background(), "UserAdd", &UserAddParameter{
 		UserName: "1237757@qq.com",
 		Password: "Aa123456",

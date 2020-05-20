@@ -4,8 +4,10 @@ import (
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+	"github.com/sean-tech/gokit/foundation"
 	"github.com/sean-tech/gokit/validate"
 	"log"
+	"sync"
 	"time"
 )
 
@@ -20,9 +22,11 @@ type IMysqlManager interface {
 	Open()
 	GetDbByUserName(userName string) (db *sqlx.DB, err error)
 	GetAllDbs() (dbs []*sqlx.DB)
+	GenerateId() int64
 }
 
 type MysqlConfig struct{
+	WorkerId 	int64			`json:"worker_id" validate:"min=0"`
 	Type 		string 			`json:"type" validate:"required,oneof=mysql"`
 	User 		string			`json:"user" validate:"required,gte=1"`
 	Password 	string			`json:"password" validate:"required,gte=1"`
@@ -33,11 +37,36 @@ type MysqlConfig struct{
 	MaxLifetime time.Duration	`json:"max_lifetime" validate:"required,gte=1"`
 }
 
+var (
+	_mysqlConfig MysqlConfig
+	_mysqlManagerOnce sync.Once
+	_mysqlManager     IMysqlManager
+)
+
+/**
+ * 根据配置接口对象初始化
+ */
+func SetupMysql(mysqlConfig MysqlConfig)  {
+	_mysqlConfig = mysqlConfig
+}
+
+func Mysql() IMysqlManager {
+	_mysqlManagerOnce.Do(func() {
+		_mysqlManager = NewMysqlManager(_mysqlConfig)
+	})
+	return _mysqlManager
+}
+
 func NewMysqlManager(mysqlConfig MysqlConfig) IMysqlManager {
+	idWorker, err := foundation.NewWorker(mysqlConfig.WorkerId)
+	if err != nil {
+		panic(err)
+	}
 	return &mysqlManagerImpl{
 		config:          mysqlConfig,
 		dbMap:           make(map[int]*sqlx.DB),
 		dataCenterCount: 0,
+		idWorker: 		 idWorker,
 	}
 }
 
@@ -48,6 +77,7 @@ type mysqlManagerImpl struct {
 	dbMap map[int]*sqlx.DB
 	/** 数据中心数量 **/
 	dataCenterCount int
+	idWorker foundation.SnowId
 }
 
 /**
@@ -98,6 +128,13 @@ func (this *mysqlManagerImpl) GetAllDbs() (dbs []*sqlx.DB) {
 		dbs = append(dbs, v)
 	}
 	return dbs
+}
+
+/**
+ * 分布式id生成
+ */
+func (this *mysqlManagerImpl) GenerateId() int64 {
+	return this.idWorker.GetId()
 }
 
 //var (
