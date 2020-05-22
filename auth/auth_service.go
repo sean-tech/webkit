@@ -20,6 +20,7 @@ func (this *authServiceImpl) NewAuth(ctx context.Context, parameter *NewAuthPara
 	if parameter.AuthCode != this.authCode {
 		return foundation.NewError(status_code_auth_code_wrong, status_msg_auth_code_wrong)
 	}
+
 	// refresh token
 	var refreshTokenItem *TokenItem; var err error
 	if refreshTokenItem, err = generateToken(parameter.UUID, parameter.Client, parameter.UserId, parameter.UserName, ""); err != nil {
@@ -30,14 +31,17 @@ func (this *authServiceImpl) NewAuth(ctx context.Context, parameter *NewAuthPara
 	if err := getDao().SaveRefreshTokenItem(parameter.UserName, refreshTokenItem); err != nil {
 		return foundation.NewError(status_code_auth_token_savefailed, status_msg_auth_token_savefailed)
 	}
+
 	// access token
 	var accessTokenItem *TokenItem
 	if accessTokenItem, err = generateToken(parameter.UUID, parameter.Client, parameter.UserId, parameter.UserName, refreshTokenItem.Id); err != nil {
 		return foundation.NewError(status_code_auth_token_generatefailed, status_msg_auth_token_generatefailed)
 	}
+	accessTokenItem.Key = key
 	if err := getDao().SaveAccessTokenItem(parameter.UserName, accessTokenItem); err != nil {
 		return foundation.NewError(status_code_auth_token_savefailed, status_msg_auth_token_savefailed)
 	}
+
 	// response
 	*result = AuthResult{
 		RefreshToken: refreshTokenItem.Token,

@@ -38,15 +38,6 @@ type HttpConfig struct {
 	HttpPort            int				`json:"http_port" validate:"required,min=1,max=10000"`
 	ReadTimeout         time.Duration	`json:"read_timeout" validate:"required,gte=1"`
 	WriteTimeout        time.Duration	`json:"write_timeout" validate:"required,gte=1"`
-	// rsa
-	RsaOpen				bool			`json:"rsa_open"`
-	Rsa 				*RsaConfig 		`json:"rsa"`
-}
-
-type RsaConfig struct {
-	ServerPubKey 		string 			`json:"server_pub_key" validate:"required"`
-	ServerPriKey		string 			`json:"server_pri_key" validate:"required"`
-	ClientPubKey 		string 			`json:"client_pub_key" validate:"required"`
 }
 
 /** 服务注册回调函数 **/
@@ -65,14 +56,6 @@ var (
 func HttpServerServe(config HttpConfig, logger IGinLogger, registerFunc GinRegisterFunc) {
 	if err := validate.ValidateParameter(config); err != nil {
 		log.Fatal(err)
-	}
-	if config.RsaOpen {
-		if config.Rsa == nil {
-			log.Fatal("server start error : http secret config is nil")
-		}
-		if err := validate.ValidateParameter(config.Rsa); err != nil {
-			log.Fatal(err)
-		}
 	}
 	_config = config
 	_idWorker, _ = foundation.NewWorker(config.WorkerId)
@@ -150,6 +133,7 @@ type requisition struct {
 	SecretMethod secret_method `json:"secretMethod"`
 	Params       []byte        `json:"params"`
 	Key          []byte        `json:"key"`
+	Rsa			 *RsaConfig
 }
 
 /**
@@ -160,6 +144,7 @@ func newRequestion(ctx *gin.Context) *requisition {
 		SecretMethod: secret_method_nouse,
 		Params:       nil,
 		Key:          nil,
+		Rsa: 		  nil,
 	}
 	ctx.Set(key_ctx_requestion, rq)
 	return rq
@@ -220,8 +205,8 @@ func (g *Gin) ResponseData(data interface{}) {
 		return
 	case secret_method_rsa:
 		jsonBytes, _ := json.Marshal(data)
-		if secretBytes, err := encrypt.GetRsa().Encrypt(_config.Rsa.ClientPubKey, jsonBytes); err == nil {
-			if signBytes, err := encrypt.GetRsa().Sign(_config.Rsa.ServerPriKey, jsonBytes); err == nil {
+		if secretBytes, err := encrypt.GetRsa().Encrypt(g.getRequisition().Rsa.ClientPubKey, jsonBytes); err == nil {
+			if signBytes, err := encrypt.GetRsa().Sign(g.getRequisition().Rsa.ServerPriKey, jsonBytes); err == nil {
 				sign := base64.StdEncoding.EncodeToString(signBytes)
 				g.LogResponseInfo(code, code.Msg(), jsonBytes, sign)
 				g.Response(code, code.Msg(), base64.StdEncoding.EncodeToString(secretBytes), sign)

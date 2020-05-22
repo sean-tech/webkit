@@ -1,6 +1,7 @@
 package gohttp
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
@@ -8,19 +9,26 @@ import (
 	"github.com/sean-tech/gokit/encrypt"
 	"github.com/sean-tech/gokit/foundation"
 	"github.com/sean-tech/gokit/validate"
+	"log"
 	"sync"
 	"time"
 )
 
-type TokenParseFunc func(token string) (userId uint64, userName, key string, err error)
+type TokenParseFunc func(ctx context.Context, token string) (userId uint64, userName, key string, err error)
 
 type SecretParams struct {
 	Secret string	`json:"secret" validate:"required,base64"`
 }
 
+type RsaConfig struct {
+	ServerPubKey 		string 			`json:"server_pub_key" validate:"required"`
+	ServerPriKey		string 			`json:"server_pri_key" validate:"required"`
+	ClientPubKey 		string 			`json:"client_pub_key" validate:"required"`
+}
+
 type ISecretManager interface {
+	InterceptRsa(rsa *RsaConfig) gin.HandlerFunc
 	InterceptToken(tokenParse TokenParseFunc) gin.HandlerFunc
-	InterceptRsa() gin.HandlerFunc
 	InterceptAes() gin.HandlerFunc
 }
 
@@ -40,36 +48,16 @@ type secretManagerImpl struct {
 }
 
 /**
- * token拦截校验
- */
-func (this *secretManagerImpl) InterceptToken(tokenParse TokenParseFunc) gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		g := Gin{ctx}
-		if userId, userName, key, err := tokenParse(ctx.GetHeader("Authorization")); err != nil {
-			g.ResponseError(err)
-			ctx.Abort()
-			return
-		} else {
-			foundation.GetRequisition(ctx).UserId = userId
-			foundation.GetRequisition(ctx).UserName = userName
-			g.getRequisition().Key, _ = hex.DecodeString(key)
-			// next
-			ctx.Next()
-		}
-	}
-}
-
-/**
  * rsa拦截校验
  */
-func (this *secretManagerImpl) InterceptRsa() gin.HandlerFunc {
-	handler := func(ctx *gin.Context) {
-		if _config.RsaOpen == false {
-			ctx.Next()
-			return
-		}
-
+func (this *secretManagerImpl) InterceptRsa(rsa *RsaConfig) gin.HandlerFunc {
+	if err := validate.ValidateParameter(rsa); err != nil {
+		log.Fatal(err)
+	}
+	return func(ctx *gin.Context) {
 		g := Gin{ctx}
+		g.getRequisition().Rsa = rsa
+
 		var code StatusCode = STATUS_CODE_SUCCESS
 		var params SecretParams
 		var encrypted []byte
@@ -84,9 +72,9 @@ func (this *secretManagerImpl) InterceptRsa() gin.HandlerFunc {
 			code = STATUS_CODE_INVALID_PARAMS
 		} else if encrypted, err = base64.StdEncoding.DecodeString(params.Secret); err != nil { // decode
 			code = STATUS_CODE_SECRET_CHECK_FAILED
-		} else if jsonBytes, err = encrypt.GetRsa().Decrypt(_config.Rsa.ServerPriKey, encrypted); err != nil { // decrypt
+		} else if jsonBytes, err = encrypt.GetRsa().Decrypt(rsa.ServerPriKey, encrypted); err != nil { // decrypt
 			code = STATUS_CODE_SECRET_CHECK_FAILED
-		} else if err = encrypt.GetRsa().Verify(_config.Rsa.ClientPubKey, jsonBytes, signDatas); err != nil { // sign verify
+		} else if err = encrypt.GetRsa().Verify(rsa.ClientPubKey, jsonBytes, signDatas); err != nil { // sign verify
 			code = STATUS_CODE_SECRET_CHECK_FAILED
 		}
 		// code check
@@ -100,19 +88,33 @@ func (this *secretManagerImpl) InterceptRsa() gin.HandlerFunc {
 		// next
 		ctx.Next()
 	}
-	return handler
+}
+
+/**
+ * token拦截校验
+ */
+func (this *secretManagerImpl) InterceptToken(tokenParse TokenParseFunc) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		g := Gin{ctx}
+		if userId, userName, key, err := tokenParse(ctx, ctx.GetHeader("Authorization")); err != nil {
+			g.ResponseError(err)
+			ctx.Abort()
+			return
+		} else {
+			foundation.GetRequisition(ctx).UserId = userId
+			foundation.GetRequisition(ctx).UserName = userName
+			g.getRequisition().Key, _ = hex.DecodeString(key)
+			// next
+			ctx.Next()
+		}
+	}
 }
 
 /**
  * aes拦截校验
  */
 func (this *secretManagerImpl) InterceptAes() gin.HandlerFunc {
-	handler := func(ctx *gin.Context) {
-		if _config.RsaOpen == false {
-			ctx.Next()
-			return
-		}
-
+	return func(ctx *gin.Context) {
 		g := Gin{ctx}
 		var code StatusCode = STATUS_CODE_SUCCESS
 		var params SecretParams
@@ -141,9 +143,7 @@ func (this *secretManagerImpl) InterceptAes() gin.HandlerFunc {
 		// next
 		ctx.Next()
 	}
-	return handler
 }
-
 
 
 

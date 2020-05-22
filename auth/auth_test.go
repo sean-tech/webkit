@@ -71,8 +71,6 @@ func TestAuthServer(t *testing.T) {
 		HttpPort:     9012,
 		ReadTimeout:  60 * time.Second,
 		WriteTimeout: 60 * time.Second,
-		RsaOpen:      false,
-		Rsa:          nil,
 	}, logging.Logger(), RegisterApi)
 }
 
