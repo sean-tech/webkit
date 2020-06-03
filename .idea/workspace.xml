@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="cd233f99-4e0a-4955-bb53-dbf9ace9c633" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/config/etcd.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/auth/auth_api.go" beforeDir="false" afterPath="$PROJECT_DIR$/auth/auth_api.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/auth/auth_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/auth/auth_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/auth/auth_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/auth/auth_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/auth/interface.go" beforeDir="false" afterPath="$PROJECT_DIR$/auth/interface.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/config.go" beforeDir="false" afterPath="$PROJECT_DIR$/config/config.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/etcd_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/config/etcd_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/secret.go" beforeDir="false" afterPath="$PROJECT_DIR$/config/secret.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/secret_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/config/secret_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/database/mysql.go" beforeDir="false" afterPath="$PROJECT_DIR$/database/mysql.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/database/redis.go" beforeDir="false" afterPath="$PROJECT_DIR$/database/redis.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gohttp/secret.go" beforeDir="false" afterPath="$PROJECT_DIR$/gohttp/secret.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gohttp/secret_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/gohttp/secret_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/webkit_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/webkit_test.go" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Go File" />
+      </list>
+    </option>
+  </component>
+  <component name="GOROOT" path="/usr/local/go" />
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectId" id="1aYmXwYO80FqQXvrnk3BuRbtt6W" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
+    <property name="DefaultGoTemplateProperty" value="Go File" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="configurable.Global.GOPATH.is.expanded" value="true" />
+    <property name="configurable.Module.GOPATH.is.expanded" value="false" />
+    <property name="configurable.Project.GOPATH.is.expanded" value="true" />
+    <property name="go.import.settings.migrated" value="true" />
+    <property name="go.sdk.automatically.set" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="node.js.detected.package.eslint" value="true" />
+    <property name="node.js.detected.package.tslint" value="true" />
+    <property name="node.js.path.for.package.eslint" value="project" />
+    <property name="node.js.path.for.package.tslint" value="project" />
+    <property name="node.js.selected.package.eslint" value="(autodetect)" />
+    <property name="node.js.selected.package.tslint" value="(autodetect)" />
+    <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
+    <property name="nodejs_npm_path_reset_for_default_project" value="true" />
+    <property name="settings.editor.selected.configurable" value="go.vgo" />
+  </component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/gorpc" />
+      <recent name="$PROJECT_DIR$/serving" />
+      <recent name="$PROJECT_DIR$/gohttp" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Go Test.TestAuthServer in github.com/sean-tech/webkit/auth">
+    <configuration name="TestAuthServer in github.com/sean-tech/webkit/auth" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="webkit" />
+      <working_directory value="$PROJECT_DIR$/auth" />
+      <framework value="gotest" />
+      <kind value="PACKAGE" />
+      <package value="github.com/sean-tech/webkit/auth" />
+      <directory value="$PROJECT_DIR$/" />
+      <filePath value="$PROJECT_DIR$/" />
+      <pattern value="^TestAuthServer$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestClientUserCall in github.com/sean-tech/webkit" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="webkit" />
+      <working_directory value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <kind value="PACKAGE" />
+      <package value="github.com/sean-tech/webkit" />
+      <directory value="$PROJECT_DIR$/" />
+      <filePath value="$PROJECT_DIR$/" />
+      <pattern value="^TestClientUserCall$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestConfigEnc in github.com/sean-tech/webkit/config" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="webkit" />
+      <working_directory value="$PROJECT_DIR$/config" />
+      <framework value="gotest" />
+      <kind value="PACKAGE" />
+      <package value="github.com/sean-tech/webkit/config" />
+      <directory value="$PROJECT_DIR$/" />
+      <filePath value="$PROJECT_DIR$/" />
+      <pattern value="^TestConfigEnc$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestEnc in github.com/sean-tech/webkit/config" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="webkit" />
+      <working_directory value="$PROJECT_DIR$/config" />
+      <framework value="gotest" />
+      <kind value="PACKAGE" />
+      <package value="github.com/sean-tech/webkit/config" />
+      <directory value="$PROJECT_DIR$/" />
+      <filePath value="$PROJECT_DIR$/" />
+      <pattern value="^TestEnc$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestUserServer in github.com/sean-tech/webkit" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="webkit" />
+      <working_directory value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <kind value="PACKAGE" />
+      <package value="github.com/sean-tech/webkit" />
+      <directory value="$PROJECT_DIR$/" />
+      <filePath value="$PROJECT_DIR$/" />
+      <pattern value="^TestUserServer$" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Go Test.TestAuthServer in github.com/sean-tech/webkit/auth" />
+        <item itemvalue="Go Test.TestClientUserCall in github.com/sean-tech/webkit" />
+        <item itemvalue="Go Test.TestUserServer in github.com/sean-tech/webkit" />
+        <item itemvalue="Go Test.TestConfigEnc in github.com/sean-tech/webkit/config" />
+        <item itemvalue="Go Test.TestEnc in github.com/sean-tech/webkit/config" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="2" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="oldMeFiltersMigrated" value="true" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
+  </component>
+  <component name="VgoProject">
+    <integration-enabled>true</integration-enabled>
+    <environment>
+      <map>
+        <entry key="GOPROXY" value="https://goproxy.io" />
+      </map>
+    </environment>
+    <proxy>https://goproxy.io</proxy>
+  </component>
+  <component name="WindowStateProjectService">
+    <state width="1960" height="367" key="GridCell.Tab.0.bottom" timestamp="1591149770429">
+      <screen x="0" y="22" width="2560" height="1418" />
+    </state>
+    <state width="1960" height="367" key="GridCell.Tab.0.bottom/0.22.2560.1418@0.22.2560.1418" timestamp="1591149770429" />
+    <state width="1960" height="367" key="GridCell.Tab.0.center" timestamp="1591149770428">
+      <screen x="0" y="22" width="2560" height="1418" />
+    </state>
+    <state width="1960" height="367" key="GridCell.Tab.0.center/0.22.2560.1418@0.22.2560.1418" timestamp="1591149770428" />
+    <state width="1960" height="367" key="GridCell.Tab.0.left" timestamp="1591149770427">
+      <screen x="0" y="22" width="2560" height="1418" />
+    </state>
+    <state width="1960" height="367" key="GridCell.Tab.0.left/0.22.2560.1418@0.22.2560.1418" timestamp="1591149770427" />
+    <state width="1960" height="367" key="GridCell.Tab.0.right" timestamp="1591149770428">
+      <screen x="0" y="22" width="2560" height="1418" />
+    </state>
+    <state width="1960" height="367" key="GridCell.Tab.0.right/0.22.2560.1418@0.22.2560.1418" timestamp="1591149770428" />
+    <state width="1960" height="370" key="GridCell.Tab.1.bottom" timestamp="1591091080733">
+      <screen x="0" y="22" width="2560" height="1418" />
+    </state>
+    <state width="1960" height="370" key="GridCell.Tab.1.bottom/0.22.2560.1418@0.22.2560.1418" timestamp="1591091080733" />
+    <state width="1960" height="370" key="GridCell.Tab.1.center" timestamp="1591091080732">
+      <screen x="0" y="22" width="2560" height="1418" />
+    </state>
+    <state width="1960" height="370" key="GridCell.Tab.1.center/0.22.2560.1418@0.22.2560.1418" timestamp="1591091080732" />
+    <state width="1960" height="370" key="GridCell.Tab.1.left" timestamp="1591091080732">
+      <screen x="0" y="22" width="2560" height="1418" />
+    </state>
+    <state width="1960" height="370" key="GridCell.Tab.1.left/0.22.2560.1418@0.22.2560.1418" timestamp="1591091080732" />
+    <state width="1960" height="370" key="GridCell.Tab.1.right" timestamp="1591091080733">
+      <screen x="0" y="22" width="2560" height="1418" />
+    </state>
+    <state width="1960" height="370" key="GridCell.Tab.1.right/0.22.2560.1418@0.22.2560.1418" timestamp="1591091080733" />
+    <state x="787" y="326" key="SettingsEditor" timestamp="1589597314045">
+      <screen x="0" y="22" width="2560" height="1418" />
+    </state>
+    <state x="787" y="326" key="SettingsEditor/0.22.2560.1418@0.22.2560.1418" timestamp="1589597314045" />
+    <state width="745" height="658" key="XDebugger.FullValuePopup" timestamp="1591090991688">
+      <screen x="0" y="22" width="2560" height="1418" />
+    </state>
+    <state width="745" height="658" key="XDebugger.FullValuePopup/0.22.2560.1418@0.22.2560.1418" timestamp="1591090991688" />
+    <state x="897" y="429" width="600" height="490" key="find.popup" timestamp="1591094553463">
+      <screen x="0" y="22" width="2560" height="1418" />
+    </state>
+    <state x="897" y="429" width="600" height="490" key="find.popup/0.22.2560.1418@0.22.2560.1418" timestamp="1591094553463" />
+    <state x="1008" y="531" key="vcs.readOnlyHandler.ReadOnlyStatusDialog" timestamp="1588922360067">
+      <screen x="0" y="22" width="2560" height="1418" />
+    </state>
+    <state x="1008" y="531" key="vcs.readOnlyHandler.ReadOnlyStatusDialog/0.22.2560.1418@0.22.2560.1418" timestamp="1588922360067" />
+  </component>
+</project>
