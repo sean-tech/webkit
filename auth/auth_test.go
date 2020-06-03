@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sean-tech/gokit/foundation"
 	"github.com/sean-tech/gokit/logging"
+	"github.com/sean-tech/webkit/config"
 	"github.com/sean-tech/webkit/database"
 	"github.com/sean-tech/webkit/gohttp"
 	"github.com/sean-tech/webkit/gorpc"
@@ -22,32 +23,17 @@ const (
 	SERVICE_AUTH = "Auth"
 )
 
-func TestAuthServer(t *testing.T) {
-
-	logging.Setup(logging.LogConfig{
-		LogSavePath: "/Users/lyra/Desktop/",
-		LogPrefix:   "auth",
-	})
-	// concurrent
-	runtime.GOMAXPROCS(runtime.NumCPU())
-	// database start
-	database.SetupRedis(database.RedisConfig{
-		Host:        "127.0.0.1:6379",
-		Password:    "",
-		MaxIdle:     30,
-		MaxActive:   30,
-		IdleTimeout: 200 * time.Second,
-	})
-	// auth setup
-	idWorker, _ := foundation.NewWorker(3)
-	Setup(AuthConfig{
-		TokenSecret:             "thisnand!abn",
-		TokenIssuer:             "sean-tech/webkit/auth",
-		RefreshTokenExpiresTime: 120 * time.Second,
-		AccessTokenExpiresTime:  30 * time.Second,
-	}, idWorker)
-	// service start
-	gorpc.ServerServe(gorpc.RpcConfig{
+var debugConfig = &config.AppConfig{
+	RsaOpen: false,
+	Rsa:     nil,
+	Http:    &gohttp.HttpConfig{
+		RunMode:      "debug",
+		WorkerId:     3,
+		HttpPort:     9012,
+		ReadTimeout:  60 * time.Second,
+		WriteTimeout: 60 * time.Second,
+	},
+	Rpc:     &gorpc.RpcConfig{
 		RunMode:              "debug",
 		RpcPort:              9011,
 		RpcPerSecondConnIdle: 500,
@@ -63,28 +49,55 @@ func TestAuthServer(t *testing.T) {
 		EtcdRpcBasePath:      "/sean-tech/webkit/auth/rpc",
 		EtcdRpcUserName:      "root",
 		EtcdRpcPassword:      "etcd.user.root.pwd",
-	}, logging.Logger(), RegisterService)
-	// server start
-	gohttp.HttpServerServe(gohttp.HttpConfig{
-		RunMode:      "debug",
-		WorkerId:     3,
-		HttpPort:     9012,
-		ReadTimeout:  60 * time.Second,
-		WriteTimeout: 60 * time.Second,
-	}, logging.Logger(), RegisterApi)
+	},
+	Mysql:   nil,
+	Redis:   &database.RedisConfig{
+		Host:        "127.0.0.1:6379",
+		Password:    "",
+		MaxIdle:     30,
+		MaxActive:   30,
+		IdleTimeout: 200 * time.Second,
+	},
+}
+
+func TestAuthServer(t *testing.T) {
+
+	logging.Setup(logging.LogConfig{
+		LogSavePath: "/Users/sean/Desktop/",
+		LogPrefix:   "auth",
+	})
+	// concurrent
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	// config
+	config.Setup("auth", "adzxcqwrz", debugConfig, func(appConfig *config.AppConfig) {
+		// auth setup
+		idWorker, _ := foundation.NewWorker(appConfig.Http.WorkerId)
+		Setup(AuthConfig{
+			TokenSecret:             "thisnand!abn",
+			TokenIssuer:             "sean-tech/webkit/auth",
+			RefreshTokenExpiresTime: 120 * time.Second,
+			AccessTokenExpiresTime:  30 * time.Second,
+		}, idWorker)
+		// database start
+		database.SetupRedis(*appConfig.Redis).Open()
+		// service start
+		gorpc.ServerServe(*appConfig.Rpc, logging.Logger(), RegisterService)
+		// server start
+		gohttp.HttpServerServe(*appConfig.Http, logging.Logger(), RegisterApi)
+	})
 }
 
 func RegisterService(server *server.Server)  {
-	server.RegisterName(SERVICE_AUTH, GetService(), "")
+	server.RegisterName(SERVICE_AUTH, Service(), "")
 }
 
 func RegisterApi(engine *gin.Engine)  {
 
 	apiv1 := engine.Group("api/v1/user/auth/")
 	{
-		apiv1.POST("new", GetApi().NewAuth)
-		apiv1.POST("refresh", GetApi().AuthRefresh)
-		apiv1.POST("accesstoken", GetApi().AccessTokenAuth)
+		apiv1.POST("new", Api().NewAuth)
+		apiv1.POST("refresh", Api().AuthRefresh)
+		apiv1.POST("accesstoken", Api().AccessTokenAuth)
 	}
 }
 

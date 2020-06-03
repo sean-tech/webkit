@@ -75,14 +75,14 @@ var (
 	_daoOnce     sync.Once
 )
 
-func GetApi() IAuthApi {
+func Api() IAuthApi {
 	_apiOnce.Do(func() {
 		_api = new(authApiImpl)
 	})
 	return _api
 }
 
-func GetService() IAuthService {
+func Service() IAuthService {
 	_serviceOnce.Do(func() {
 		_service = &authServiceImpl{
 			authCode: "this is auth code for validate",
@@ -91,7 +91,7 @@ func GetService() IAuthService {
 	return _service
 }
 
-func getDao() iAuthDao {
+func dao() iAuthDao {
 	_daoOnce.Do(func() {
 		_dao = new(authDaoImpl)
 	})

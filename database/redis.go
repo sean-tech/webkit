@@ -34,8 +34,9 @@ var (
 /**
  * 根据配置接口对象初始化
  */
-func SetupRedis(redisConfig RedisConfig)  {
+func SetupRedis(redisConfig RedisConfig) IRedisManager {
 	_redisConfig = redisConfig
+	return Redis()
 }
 
 func Redis() IRedisManager {

@@ -1,109 +1,113 @@
 package config
 
 import (
-	"time"
+	"errors"
+	"flag"
+	"github.com/sean-tech/gokit/foundation"
+	"github.com/sean-tech/gokit/validate"
+	"github.com/sean-tech/webkit/database"
+	"github.com/sean-tech/webkit/gohttp"
+	"github.com/sean-tech/webkit/gorpc"
+	"log"
 )
 
 type AppConfig struct {
-	RunMode 				string			`json:"run_mode" validate:"required,oneof=debug test release"`
-	WorkerId 				int64			`json:"worker_id" validate:"min=0"`
-	HttpPort            	int				`json:"http_port" validate:"required,min=1000"`
-	RpcPort               	int				`json:"rpc_port" validate:"required,min=1000"`
-	RpcPerSecondConnIdle  	int64			`json:"rpc_per_second_conn_idle" validate:"required,gte=1"`
+	RsaOpen bool					`json:"rsa_open"`
+	Rsa 	*gohttp.RsaConfig		`json:"rsa"`
+	Http 	*gohttp.HttpConfig		`json:"http" validate:"required"`
+	Rpc 	*gorpc.RpcConfig		`json:"rpc" validate:"required"`
+	Mysql 	*database.MysqlConfig	`json:"mysql" validate:"required"`
+	Redis 	*database.RedisConfig	`json:"redis" validate:"required"`
 }
+
+func (cfg *AppConfig) Validate() error {
+	if err := validate.ValidateParameter(cfg); err != nil {
+		return err
+	}
+	if cfg.RsaOpen {
+		if err := validate.ValidateParameter(cfg.Rsa); err != nil {
+			return err
+		}
+	}
+	if cfg.Rpc.TlsOpen {
+		if err := validate.ValidateParameter(cfg.Rpc.Tls); err != nil {
+			return err
+		}
+	}
+	if cfg.Http != nil && cfg.Rpc != nil {
+		if cfg.Http.RunMode != cfg.Rpc.RunMode {
+			return errors.New("runmode is not equal between http in rpc")
+		}
+	}
+	return nil
+}
+
+
+
+type ConfigLoad func(appConfig *AppConfig)
 
 /**
- * 全局server统一配置
+ * 初始化config，通过etcd注册中心
  */
-type ServerConfig struct {
-	// http token
-	HttpToken 			*TokenConfig	`json:"http_token" validate:"required"`
-	HttpCert			*HttpSecret		`json:"http_cert" validate:"required"`
+func Setup(module, salt string, debugConfig *AppConfig, load ConfigLoad) {
+	// runmode
+	runmode_usage := "please use -runmode to pointing at runmode, incase 'debug', 'test' and 'release'."
+	runmode := flag.String("runmode", "debug", runmode_usage)
+	// secret
+	secret_usage := "please use -secret to pointing at etcd secret info."
+	secret := flag.String("secret", "", secret_usage)
+	// parse
+	flag.Parse()
 
-	// rpc token
-	RpcToken 			*TokenConfig	`json:"http_token" validate:"required"`
-	// timeout
-	TcpReadTimeout      time.Duration	`json:"read_timeout" validate:"required,gte=1"`
-	TcpWriteTimeout     time.Duration	`json:"write_timeout" validate:"required,gte=1"`
-	// etcd
-	EtcdEndPoints 		[]string		`json:"etcd_end_points" validate:"required,gte=1,dive,tcp_addr"`
-	EtcdRpcBasePath 	string			`json:"etcd_rpc_base_path" validate:"required,gte=1"`
-	EtcdRpcUserName 	string			`json:"etcd_rpc_username" validate:"required,gte=1"`
-	EtcdRpcPassword 	string			`json:"etcd_rpc_password" validate:"required,gte=1"`
+	// parse value validate
+	switch *runmode {
+	case foundation.RUN_MODE_DEBUG:
+		log.Println("config load success in ", *runmode)
+		load(debugConfig)
+
+	case foundation.RUN_MODE_TEST:fallthrough
+	case foundation.RUN_MODE_RELEASE:
+		if secret == nil || *secret == "" {
+			panic("secret for etcd cmd params is nil in test or release runmode")
+		}
+		_params = cmdDecrypt(*secret, module, salt)
+		log.Println("config loading...")
+		cfg := configLoad(module, salt)
+		if *runmode != cfg.Http.RunMode {
+			panic("runmode in cmd is not equal with config")
+		}
+		log.Println("config load success in ", *runmode)
+		load(cfg)
+
+	default:
+		panic("runmode is wrong, not incase 'debug', 'test' or 'release'")
+	}
 }
 
-type TokenConfig struct {
-	TokenSecret     	string      	`json:"token_secret" validate:"required,gte=1"`
-	TokenIssuer     	string      	`json:"token_issuer" validate:"required,gte=1"`
-	TokenExpiresTime 	time.Duration 	`json:"token_expires_time" validate:"required,gte=1"`
-}
+func configLoad(module, salt string) (appConfig *AppConfig) {
 
-type HttpSecret struct {
-	ServerPubKey 		string 			`json:"server_pub_key" validate:"required"`
-	ServerPriKey		string 			`json:"server_pri_key" validate:"required"`
-	ClientPubKey 		string 			`json:"client_pub_key" validate:"required"`
-}
+	clientInit()
 
-type RpcSecret struct {
-	CACert       			string 			`json:"ca_cert" validate:"required"`
-	CACommonName 			string 			`json:"ca_common_name" validate:"required"`
-	ServerCert   			string 			`json:"server_cert" validate:"required"`
-	ServerKey    			string 			`json:"server_key" validate:"required"`
-}
+	var ips []string
+	if ips = GetLocalIP(); ips == nil {
+		panic("local ip got failed")
+	}
+	var workerId int64 = -1
+	for _, ip := range ips {
+		var err error
+		if workerId, err = GetWorkerId(module, ip); err != nil {
+			continue
+		}
+	}
+	if workerId == -1 {
+		panic("load workerid failed")
+	}
 
-//type HttpConfig struct {
-//	RunMode 			string			`json:"run_mode" validate:"required,oneof=debug test release"`
-//	WorkerId 			int64			`json:"worker_id" validate:"min=0"`
-//	HttpPort            int				`json:"http_port" validate:"required,min=1,max=10000"`
-//	ReadTimeout         time.Duration	`json:"read_timeout" validate:"required,gte=1"`
-//	WriteTimeout        time.Duration	`json:"write_timeout" validate:"required,gte=1"`
-//	// token
-//	TokenSecret      	string        	`json:"token_secret" validate:"required,gte=1"`
-//	TokenIssuer      	string        	`json:"token_issuer" validate:"required,gte=1"`
-//	TokenExpiresTime 	time.Duration 	`json:"token_expires_time" validate:"required,gte=1"`
-
-//	// secret
-//	ServerPubKey 		string 			`json:"server_pub_key"`
-//	ServerPriKey 		string 			`json:"server_pri_key"`
-//	ClientPubKey 		string 			`json:"client_pub_key"`
-//}
-
-//type RpcConfig struct {
-//	RunMode string							`json:"run_mode" validate:"required,oneof=debug test release"`
-//	RpcPort               	int				`json:"rpc_port" validate:"required,min=1,max=10000"`
-//	RpcPerSecondConnIdle  	int64			`json:"rpc_per_second_conn_idle" validate:"required,gte=1"`
-//	ReadTimeout           	time.Duration	`json:"read_timeout" validate:"required,gte=1"`
-//	WriteTimeout          	time.Duration	`json:"write_timeout" validate:"required,gte=1"`
-//	// token
-//	TokenSecret      		string        	`json:"token_secret" validate:"required,gte=1"`
-//	TokenIssuer      		string        	`json:"token_issuer" validate:"required,gte=1"`
-//	// tls
-//	CACert       			string 			`json:"ca_cert"`
-//	CACommonName 			string 			`json:"ca_common_name"`
-//	ServerCert   			string 			`json:"server_cert"`
-//	ServerKey    			string 			`json:"server_key"`
-//	// etcd
-//	EtcdEndPoints 			[]string		`json:"etcd_end_points" validate:"required,gte=1,dive,tcp_addr"`
-//	EtcdRpcBasePath 		string			`json:"etcd_rpc_base_path" validate:"required,gte=1"`
-//	EtcdRpcUserName 		string			`json:"etcd_rpc_username" validate:"required,gte=1"`
-//	EtcdRpcPassword 		string			`json:"etcd_rpc_password" validate:"required,gte=1"`
-//}
-
-type MysqlConfig struct{
-	Type 		string 			`json:"type" validate:"required,oneof=mysql"`
-	User 		string			`json:"user" validate:"required,gte=1"`
-	Password 	string			`json:"password" validate:"required,gte=1"`
-	Hosts 		map[int]string	`json:"hosts" validate:"required,gte=1,dive,keys,min=0,endkeys,tcp_addr"`
-	Name 		string			`json:"name" validate:"required,gte=1"`
-	MaxIdle 	int				`json:"max_idle" validate:"required,min=1"`
-	MaxOpen 	int				`json:"max_open" validate:"required,min=1"`
-	MaxLifetime time.Duration	`json:"max_lifetime" validate:"required,gte=1"`
-}
-
-type RedisConfig struct{
-	Host        string			`json:"host" validate:"required,tcp_addr"`
-	Password    string			`json:"password" validate:"gte=0"`
-	MaxIdle     int				`json:"max_idle" validate:"required,min=1"`
-	MaxActive   int				`json:"max_active" validate:"required,min=1"`
-	IdleTimeout time.Duration	`json:"idle_timeout" validate:"required,gte=1"`
+	if appConfig, err := GetConfig(module, salt); err != nil {
+		panic(err)
+	} else {
+		appConfig.Http.WorkerId = workerId
+		appConfig.Mysql.WorkerId = workerId
+	}
+	return appConfig
 }

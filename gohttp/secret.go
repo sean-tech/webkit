@@ -37,7 +37,7 @@ var (
 	_secretManager *secretManagerImpl
 )
 
-func GetSecretManager() ISecretManager {
+func SecretManager() ISecretManager {
 	_secretManagerOnce.Do(func() {
 		_secretManager = &secretManagerImpl{}
 	})

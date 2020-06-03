@@ -46,8 +46,9 @@ var (
 /**
  * 根据配置接口对象初始化
  */
-func SetupMysql(mysqlConfig MysqlConfig)  {
+func SetupMysql(mysqlConfig MysqlConfig) IMysqlManager {
 	_mysqlConfig = mysqlConfig
+	return Mysql()
 }
 
 func Mysql() IMysqlManager {

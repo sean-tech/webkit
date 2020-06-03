@@ -18,7 +18,7 @@ func (this *authApiImpl) NewAuth(ctx *gin.Context) {
 		return
 	}
 	var result = new(AuthResult)
-	if err := GetService().NewAuth(ctx, &parameter, result); err != nil {
+	if err := Service().NewAuth(ctx, &parameter, result); err != nil {
 		g.ResponseError(err)
 		return
 	}
@@ -35,7 +35,7 @@ func (this *authApiImpl) AuthRefresh(ctx *gin.Context) {
 		return
 	}
 	var result = new(AuthResult)
-	if err := GetService().AuthRefresh(ctx, &parameter, result); err != nil {
+	if err := Service().AuthRefresh(ctx, &parameter, result); err != nil {
 		g.ResponseError(err)
 		return
 	}
@@ -52,7 +52,7 @@ func (this *authApiImpl) AccessTokenAuth(ctx *gin.Context) {
 		return
 	}
 	var result = new(TokenItem)
-	if err := GetService().AccessTokenAuth(ctx, &parameter, result); err != nil {
+	if err := Service().AccessTokenAuth(ctx, &parameter, result); err != nil {
 		g.ResponseError(err)
 		return
 	}

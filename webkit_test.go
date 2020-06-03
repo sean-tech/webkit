@@ -12,6 +12,7 @@ import (
 	"github.com/sean-tech/gokit/logging"
 	"github.com/sean-tech/gokit/validate"
 	"github.com/sean-tech/webkit/auth"
+	"github.com/sean-tech/webkit/config"
 	"github.com/sean-tech/webkit/database"
 	"github.com/sean-tech/webkit/gohttp"
 	"github.com/sean-tech/webkit/gorpc"
@@ -190,23 +191,17 @@ func (this *userDaoImpl) UserGetByUserId(userId uint64) (user *User, err error) 
 
 
 
-func TestUserServer(t *testing.T) {
-	logging.Setup(logging.LogConfig{
-		LogSavePath: "/Users/lyra/Desktop/",
-		LogPrefix:   "user",
-	})
-	// concurrent
-	runtime.GOMAXPROCS(runtime.NumCPU())
-	// database start
-	database.SetupRedis(database.RedisConfig{
-		Host:        "127.0.0.1:6379",
-		Password:    "",
-		MaxIdle:     30,
-		MaxActive:   30,
-		IdleTimeout: 200 * time.Second,
-	})
-	// service start
-	gorpc.ServerServe(gorpc.RpcConfig{
+var debugConfig = &config.AppConfig{
+	RsaOpen: false,
+	Rsa:     nil,
+	Http:    &gohttp.HttpConfig{
+		RunMode:      "debug",
+		WorkerId:     3,
+		HttpPort:     9022,
+		ReadTimeout:  60 * time.Second,
+		WriteTimeout: 60 * time.Second,
+	},
+	Rpc:     &gorpc.RpcConfig{
 		RunMode:              "debug",
 		RpcPort:              9021,
 		RpcPerSecondConnIdle: 500,
@@ -222,15 +217,32 @@ func TestUserServer(t *testing.T) {
 		EtcdRpcBasePath:      "/sean-tech/webkit/auth/rpc",
 		EtcdRpcUserName:      "root",
 		EtcdRpcPassword:      "etcd.user.root.pwd",
-	}, logging.Logger(), RegisterService)
-	// server start
-	gohttp.HttpServerServe(gohttp.HttpConfig{
-		RunMode:      "debug",
-		WorkerId:     3,
-		HttpPort:     9022,
-		ReadTimeout:  60 * time.Second,
-		WriteTimeout: 60 * time.Second,
-	}, logging.Logger(), RegisterApi)
+	},
+	Mysql:   nil,
+	Redis:   &database.RedisConfig{
+		Host:        "127.0.0.1:6379",
+		Password:    "",
+		MaxIdle:     30,
+		MaxActive:   30,
+		IdleTimeout: 200 * time.Second,
+	},
+}
+func TestUserServer(t *testing.T) {
+	logging.Setup(logging.LogConfig{
+		LogSavePath: "/Users/sean/Desktop/",
+		LogPrefix:   "user",
+	})
+	// concurrent
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	// config
+	config.Setup("user", "asdzxczcq", debugConfig, func(appConfig *config.AppConfig) {
+		// database start
+		database.SetupRedis(*appConfig.Redis).Open()
+		// service start
+		gorpc.ServerServe(*appConfig.Rpc, logging.Logger(), RegisterService)
+		// server start
+		gohttp.HttpServerServe(*appConfig.Http, logging.Logger(), RegisterApi)
+	})
 }
 
 func RegisterService(server *server.Server)  {
@@ -242,13 +254,13 @@ func RegisterApi(engine *gin.Engine)  {
 	//serverPubKeyBytes, _ := ioutil.ReadFile("/Users/lyra/Desktop/Doc/安全方案/businessS/spubkey.pem")
 	//serverPriKeyBytes, _ := ioutil.ReadFile("/Users/lyra/Desktop/Doc/安全方案/businessS/sprivkey.pem")
 	//clientPubKeyBytes, _ := ioutil.ReadFile("/Users/lyra/Desktop/Doc/安全方案/businessC/cpubkey.pem")
-	//var rsaHandler = gohttp.GetSecretManager().InterceptRsa(&gohttp.RsaConfig{
+	//var rsaHandler = gohttp.SecretManager().InterceptRsa(&gohttp.RsaConfig{
 	//	ServerPubKey:     string(serverPubKeyBytes),
 	//	ServerPriKey:     string(serverPriKeyBytes),
 	//	ClientPubKey:     string(clientPubKeyBytes),
 	//})
 
-	var tokenHandler =  gohttp.GetSecretManager().InterceptToken(func(ctx context.Context, token string) (userId uint64, userName, key string, err error) {
+	var tokenHandler =  gohttp.SecretManager().InterceptToken(func(ctx context.Context, token string) (userId uint64, userName, key string, err error) {
 		var parameter = &auth.AccessTokenAuthParameter{
 			AccessToken: token,
 		}
@@ -262,7 +274,7 @@ func RegisterApi(engine *gin.Engine)  {
 	apiv1 := engine.Group("api/v1/user/")
 	{
 		apiv1.POST("login", GetApi().UserLogin)
-		apiv1.POST("get", tokenHandler, gohttp.GetSecretManager().InterceptAes(), GetApi().UserGet)
+		apiv1.POST("get", tokenHandler, gohttp.SecretManager().InterceptAes(), GetApi().UserGet)
 	}
 }
 

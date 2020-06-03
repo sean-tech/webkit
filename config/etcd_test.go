@@ -1,87 +1,114 @@
 package config
 
 import (
-	"context"
 	"fmt"
-	"github.com/coreos/etcd/clientv3"
+	"github.com/sean-tech/webkit/database"
+	"github.com/sean-tech/webkit/gohttp"
+	"github.com/sean-tech/webkit/gorpc"
 	"testing"
 	"time"
 )
 
-const (
-	PATH = "sean-tech/webkit/etcdtest"
-)
-
-var (
-	_dialTimeout    = 5 * time.Second
-	_requestTimeout = 3 * time.Second
-	_endpoints []string = []string{"127.0.0.1:2379"}
-)
+const module = "user"
+const salt = "asdasdasdadzxczc"
 
 func TestPut(t *testing.T) {
-	var value string = "value 3"
-	cli, err := clientv3.New(clientv3.Config{
-		Endpoints:   _endpoints,
-		DialTimeout: _dialTimeout,
-		Username: "",
-		Password: "",
-	})
-	if err != nil {
+	if err := PutConfig(cfg, module, salt); err != nil {
 		t.Error(err)
-	}
-	defer cli.Close()
-
-	if resp, err := cli.Put(context.Background(), PATH, value, clientv3.WithPrevKV()); err != nil {
-		t.Error(err)
-	} else {
-		_ = resp
-		//Log.Println(resp)
 	}
 	fmt.Println("put success")
 }
 
 func TestDelete(t *testing.T) {
-	cli, err := clientv3.New(clientv3.Config{
-		Endpoints:   _endpoints,
-		DialTimeout: _dialTimeout,
-	})
-	if err != nil {
+	if err := DeleteConfig(module); err != nil {
 		t.Error(err)
-	}
-	defer cli.Close()
-
-	if resp, err := cli.Delete(context.Background(), PATH); err != nil {
-		t.Error(err)
-	} else {
-		//fmt.Println(resp)
-		_ = resp
 	}
 	fmt.Println("delete success")
 }
 
 func TestGet(t *testing.T) {
-	cli, err := clientv3.New(clientv3.Config{
-		Endpoints:   _endpoints,
-		DialTimeout: _dialTimeout,
-	})
-	if err != nil {
+	var cfg *AppConfig; var err error
+	if cfg, err = GetConfig(module, salt); err != nil {
 		t.Error(err)
 	}
-	defer cli.Close()
-	// global get
-	if resp, err := cli.Get(context.Background(), PATH); err != nil {
+	fmt.Println("get success")
+	fmt.Printf("%+v\n", cfg)
+}
+
+func TestPutWorkerId(t *testing.T) {
+	if err := PutWorkerId(1, module, "192.168.1.20"); err != nil {
+		t.Error(err)
+	}
+	fmt.Println("workerid put success")
+}
+
+func TestGetWorkerId(t *testing.T) {
+	if workerId, err := GetWorkerId(module, "192.168.1.20"); err != nil {
 		t.Error(err)
 	} else {
-		//if len(resp.Kvs) != 1 {
-		//	err := errors.New("gloabl config get error:kvs count not only 1")
-		//	t.Error(err)
-		//}
-		//kvs := resp.Kvs[0]
-		//var global *GlobalConfig
-		//if global, err = globalConfigWithJson(kvs.Value); err != nil {
-		//	return nil, err
-		//}
-		//return global, nil
-		fmt.Printf("%+v\n", resp.Kvs)
+		fmt.Println("workerid get success : ", workerId)
 	}
+}
+
+func TestDeleteWorkerId(t *testing.T) {
+	if err := DeleteWorkerId(module, "192.168.1.20"); err != nil {
+		t.Error(err)
+	}
+	fmt.Println("workerid delete success")
+}
+
+func TestGetAllWorkers(t *testing.T) {
+	if workers, err := GetAllWorkers(module); err != nil {
+		t.Error(err)
+	} else {
+		fmt.Println("all workers get success : ", workers)
+	}
+}
+
+
+var cfg = &AppConfig{
+	RsaOpen: false,
+	Rsa:     nil,
+	Http:    &gohttp.HttpConfig{
+		RunMode:      "debug",
+		WorkerId:     3,
+		HttpPort:     9022,
+		ReadTimeout:  60 * time.Second,
+		WriteTimeout: 60 * time.Second,
+	},
+	Rpc:     &gorpc.RpcConfig{
+		RunMode:              "debug",
+		RpcPort:              9021,
+		RpcPerSecondConnIdle: 500,
+		ReadTimeout:          60 * time.Second,
+		WriteTimeout:         60 * time.Second,
+		TokenSecret:          "th!@#isasd",
+		TokenIssuer:          "/sean-tech/webkit/auth",
+		TlsOpen:              false,
+		Tls:                  nil,
+		WhiteListOpen:        false,
+		WhiteListIps:         nil,
+		EtcdEndPoints:        []string{"127.0.0.1:2379"},
+		EtcdRpcBasePath:      "/sean-tech/webkit/rpc",
+		EtcdRpcUserName:      "root",
+		EtcdRpcPassword:      "etcd.user.root.pwd",
+	},
+	Mysql:   &database.MysqlConfig{
+		WorkerId:    3,
+		Type:        "mysql",
+		User:        "root",
+		Password:    "admin2018",
+		Hosts: 		 map[int]string{0:"127.0.0.1:3306"},
+		Name:        "etcd_center",
+		MaxIdle:     30,
+		MaxOpen:     30,
+		MaxLifetime: 200 * time.Second,
+	},
+	Redis:   &database.RedisConfig{
+		Host:        "127.0.0.1:6379",
+		Password:    "",
+		MaxIdle:     30,
+		MaxActive:   30,
+		IdleTimeout: 200 * time.Second,
+	},
 }

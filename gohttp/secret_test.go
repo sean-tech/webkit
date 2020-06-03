@@ -14,7 +14,7 @@ func TestJwt(t *testing.T) {
 	//if err != nil {
 	//	t.Error(err)
 	//}
-	//key, err := GetSecretManager().GetAesKey(token)
+	//key, err := SecretManager().GetAesKey(token)
 	//if err != nil {
 	//	t.Error(err)
 	//}

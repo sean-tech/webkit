@@ -28,7 +28,7 @@ func (this *authServiceImpl) NewAuth(ctx context.Context, parameter *NewAuthPara
 	}
 	var key = hex.EncodeToString(encrypt.GetAes().GenerateKey())
 	refreshTokenItem.Key = key
-	if err := getDao().SaveRefreshTokenItem(parameter.UserName, refreshTokenItem); err != nil {
+	if err := dao().SaveRefreshTokenItem(parameter.UserName, refreshTokenItem); err != nil {
 		return foundation.NewError(status_code_auth_token_savefailed, status_msg_auth_token_savefailed)
 	}
 
@@ -38,7 +38,7 @@ func (this *authServiceImpl) NewAuth(ctx context.Context, parameter *NewAuthPara
 		return foundation.NewError(status_code_auth_token_generatefailed, status_msg_auth_token_generatefailed)
 	}
 	accessTokenItem.Key = key
-	if err := getDao().SaveAccessTokenItem(parameter.UserName, accessTokenItem); err != nil {
+	if err := dao().SaveAccessTokenItem(parameter.UserName, accessTokenItem); err != nil {
 		return foundation.NewError(status_code_auth_token_savefailed, status_msg_auth_token_savefailed)
 	}
 
@@ -66,11 +66,11 @@ func (this *authServiceImpl) AuthRefresh(ctx context.Context, parameter *AuthRef
 
 	// refresh token validate
 	var refreshTokenItem *TokenItem
-	if refreshTokenItem, err = getDao().GetRefreshTokenItem(accessTokenItem.UserName); err != nil {
+	if refreshTokenItem, err = dao().GetRefreshTokenItem(accessTokenItem.UserName); err != nil {
 		return err
 	}
 	if time.Now().Unix() > refreshTokenItem.ExpiresAt {
-		_ = getDao().DeleteRefreshTokenItem(refreshTokenItem.UserName)
+		_ = dao().DeleteRefreshTokenItem(refreshTokenItem.UserName)
 		return foundation.NewError(status_code_auth_token_timeout, status_msg_auth_token_timeout)
 	}
 	var refreshTokenClaims *TokenClaims
@@ -105,7 +105,7 @@ func (this *authServiceImpl) AccessTokenAuth(ctx context.Context, parameter *Acc
 	}
 	// saved token validate
 	var savedAccessTokenItem *TokenItem
-	if savedAccessTokenItem, err = getDao().GetAccessTokenItem(accessTokenClaims.UserName); err != nil {
+	if savedAccessTokenItem, err = dao().GetAccessTokenItem(accessTokenClaims.UserName); err != nil {
 		return err
 	}
 	if savedAccessTokenItem.Token != parameter.AccessToken {

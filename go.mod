@@ -13,5 +13,6 @@ require (
 	github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0
 	github.com/sean-tech/gokit v1.0.6
 	github.com/smallnest/rpcx v0.0.0-20200414114925-bff251b691b9
+	go.etcd.io/etcd v3.3.13+incompatible
 	gopkg.in/redis.v5 v5.2.9
 )
