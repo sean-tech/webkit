@@ -5,10 +5,10 @@ import (
 	"github.com/sean-tech/webkit/gohttp"
 )
 
-type authApiImpl struct {
+type apiImpl struct {
 }
 
-func (this *authApiImpl) NewAuth(ctx *gin.Context) {
+func (this *apiImpl) NewAuth(ctx *gin.Context) {
 	g := gohttp.Gin{
 		Ctx: ctx,
 	}
@@ -25,7 +25,7 @@ func (this *authApiImpl) NewAuth(ctx *gin.Context) {
 	g.ResponseData(result)
 }
 
-func (this *authApiImpl) AuthRefresh(ctx *gin.Context) {
+func (this *apiImpl) AuthRefresh(ctx *gin.Context) {
 	g := gohttp.Gin{
 		Ctx: ctx,
 	}
@@ -42,7 +42,7 @@ func (this *authApiImpl) AuthRefresh(ctx *gin.Context) {
 	g.ResponseData(result)
 }
 
-func (this *authApiImpl) AccessTokenAuth(ctx *gin.Context) {
+func (this *apiImpl) AccessTokenAuth(ctx *gin.Context) {
 	g := gohttp.Gin{
 		Ctx: ctx,
 	}

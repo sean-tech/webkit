@@ -4,14 +4,12 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/hex"
-	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/sean-tech/gokit/encrypt"
 	"github.com/sean-tech/gokit/foundation"
 	"github.com/sean-tech/gokit/validate"
 	"log"
 	"sync"
-	"time"
 )
 
 type TokenParseFunc func(ctx context.Context, token string) (userId uint64, userName, key string, err error)
@@ -143,49 +141,4 @@ func (this *secretManagerImpl) InterceptAes() gin.HandlerFunc {
 		// next
 		ctx.Next()
 	}
-}
-
-
-
-/** 存储接口 **/
-type ISecretStorage interface {
-	Set(key string, value interface{}, expiration time.Duration) error
-	Get(key string) (string, error)
-	Delete(key string)
-}
-
-/**
-* 获取内存存储实例
-*/
-func NewMemeoryStorage() ISecretStorage {
-	return new(SecretMemeoryStorageImpl)
-}
-var _memoryStorage = NewMemeoryStorage()
-
-// 内存存储实现
-type SecretMemeoryStorageImpl struct {
-	memoryStorageMap sync.Map
-}
-
-func (this *SecretMemeoryStorageImpl) Set(key string, value interface{}, expiresTime time.Duration) error {
-	this.memoryStorageMap.Store(key, value)
-	// 定时删除
-	go func(storage *SecretMemeoryStorageImpl, expiresTime time.Duration) {
-		select {
-		case <- time.After(expiresTime):
-			storage.Delete(key)
-		}
-	}(this, expiresTime)
-	return nil
-}
-
-func (this *SecretMemeoryStorageImpl) Get(key string) (value string, err error) {
-	if tokenInter, ok := this.memoryStorageMap.Load(key); ok {
-		return tokenInter.(string), nil
-	}
-	return "", errors.New("value for key " + key + "not exist")
-}
-
-func (this *SecretMemeoryStorageImpl) Delete(key string) {
-	this.memoryStorageMap.Delete(key)
 }

@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/gin-gonic/gin"
 	"github.com/sean-tech/gokit/foundation"
+	"github.com/sean-tech/gokit/validate"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -77,14 +79,14 @@ var (
 
 func Api() IAuthApi {
 	_apiOnce.Do(func() {
-		_api = new(authApiImpl)
+		_api = new(apiImpl)
 	})
 	return _api
 }
 
 func Service() IAuthService {
 	_serviceOnce.Do(func() {
-		_service = &authServiceImpl{
+		_service = &serviceImpl{
 			authCode: "this is auth code for validate",
 		}
 	})
@@ -93,14 +95,29 @@ func Service() IAuthService {
 
 func dao() iAuthDao {
 	_daoOnce.Do(func() {
-		_dao = new(authDaoImpl)
+		_dao = new(daoImpl)
 	})
 	return _dao
 }
 
 
 
+type IAuthStorage interface {
+	// hash table set & get
+	HashExists(key, field string) (bool, error)
+	HashLen(key string) (int64, error)
+	HashSet(key string, values ...interface{}) error
+	HashGet(key, field string) (string, error)
+	HashMSet(key string, values ...interface{}) error
+	HashMGet(key string, fields ...string) ([]interface{}, error)
+	HashDelete(key string, fields ...string) error
+	HashKeys(key string) ([]string, error)
+	HashVals(key string) ([]string, error)
+	HashGetAll(key string) (map[string]string, error)
+}
+
 type AuthConfig struct {
+	WorkerId 					int64			`json:"worker_id" validate:"min=0"`
 	TokenSecret      			string        	`json:"token_secret" validate:"required,gte=1"`
 	TokenIssuer      			string        	`json:"token_issuer" validate:"required,gte=1"`
 	RefreshTokenExpiresTime 	time.Duration 	`json:"refresh_token_expires_time" validate:"required,gte=1"`
@@ -110,11 +127,22 @@ type AuthConfig struct {
 var (
 	_config AuthConfig
 	_idWorker foundation.SnowId
+	_storage IAuthStorage
 )
 
-func Setup(config AuthConfig, idWorker foundation.SnowId)  {
+func Setup(config AuthConfig, storage IAuthStorage)  {
+	if err := validate.ValidateParameter(config); err != nil {
+		panic(err)
+	}
 	_config = config
-	_idWorker = idWorker
+	var err error
+	if _idWorker, err = foundation.NewWorker(config.WorkerId); err != nil {
+		panic("snowid worker init failed with id : " + strconv.FormatInt(config.WorkerId, 10))
+	}
+	if storage == nil {
+		panic("auth storage is nil")
+	}
+	_storage = storage
 }
 
 

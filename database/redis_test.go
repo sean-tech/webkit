@@ -38,6 +38,44 @@ func TestRedisSet(t *testing.T) {
 	}
 }
 
+func TestGetEmpty(t *testing.T) {
+	redisStart()
+	if value, err := redisManager.Get("nothing key222"); err != nil {
+		t.Error(err)
+	} else {
+		fmt.Println(value)
+	}
+
+	// --- FAIL: TestGetEmpty (0.00s)
+	//    redis_test.go:50: redis: nil
+	//if value, err := redisManager.HashGet("nothing key", "nothing field"); err != nil {
+	//	t.Error(err)
+	//} else {
+	//	fmt.Println(value)
+	//}
+
+	// [<nil>]
+	if value, err := redisManager.HashMGet("nothing key", "nothing field"); err != nil {
+		t.Error(err)
+	} else {
+		fmt.Println(value)
+	}
+
+	// FAIL: TestGetEmpty (0.00s)
+	//    redis_test.go:65: ERR wrong number of arguments for 'hset' command
+	//if err := redisManager.HashSet("nothing key", "nothing field"); err != nil {
+	//	t.Error(err)
+	//} else {
+	//	fmt.Println("hash set success")
+	//}
+
+	if err := redisManager.HashDelete("zncz", "asdzxc"); err != nil {
+		t.Error(err)
+	} else {
+		fmt.Println("hashdelete success")
+	}
+}
+
 func TestDelete(t *testing.T) {
 	redisStart()
 	redisManager.Delete(key_saved)

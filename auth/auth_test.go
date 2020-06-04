@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/sean-tech/gokit/foundation"
 	"github.com/sean-tech/gokit/logging"
 	"github.com/sean-tech/webkit/config"
 	"github.com/sean-tech/webkit/database"
@@ -60,6 +59,14 @@ var debugConfig = &config.AppConfig{
 	},
 }
 
+var authConfig = AuthConfig{
+	WorkerId: 				 1,
+	TokenSecret:             "thisnand!abn",
+	TokenIssuer:             "sean-tech/webkit/auth",
+	RefreshTokenExpiresTime: 120 * time.Second,
+	AccessTokenExpiresTime:  30 * time.Second,
+}
+
 func TestAuthServer(t *testing.T) {
 
 	logging.Setup(logging.LogConfig{
@@ -70,16 +77,11 @@ func TestAuthServer(t *testing.T) {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	// config
 	config.Setup("auth", "adzxcqwrz", debugConfig, func(appConfig *config.AppConfig) {
-		// auth setup
-		idWorker, _ := foundation.NewWorker(appConfig.Http.WorkerId)
-		Setup(AuthConfig{
-			TokenSecret:             "thisnand!abn",
-			TokenIssuer:             "sean-tech/webkit/auth",
-			RefreshTokenExpiresTime: 120 * time.Second,
-			AccessTokenExpiresTime:  30 * time.Second,
-		}, idWorker)
 		// database start
 		database.SetupRedis(*appConfig.Redis).Open()
+		// auth setup
+		Setup(authConfig, database.Redis())
+		//Setup(authConfig, storage.Hash())
 		// service start
 		gorpc.ServerServe(*appConfig.Rpc, logging.Logger(), RegisterService)
 		// server start

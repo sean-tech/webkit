@@ -12,11 +12,11 @@ import (
 
 
 
-type authServiceImpl struct {
+type serviceImpl struct {
 	authCode string
 }
 
-func (this *authServiceImpl) NewAuth(ctx context.Context, parameter *NewAuthParameter, result *AuthResult) error {
+func (this *serviceImpl) NewAuth(ctx context.Context, parameter *NewAuthParameter, result *AuthResult) error {
 	if parameter.AuthCode != this.authCode {
 		return foundation.NewError(status_code_auth_code_wrong, status_msg_auth_code_wrong)
 	}
@@ -51,7 +51,7 @@ func (this *authServiceImpl) NewAuth(ctx context.Context, parameter *NewAuthPara
 	return nil
 }
 
-func (this *authServiceImpl) AuthRefresh(ctx context.Context, parameter *AuthRefreshParameter, result *AuthResult) error {
+func (this *serviceImpl) AuthRefresh(ctx context.Context, parameter *AuthRefreshParameter, result *AuthResult) error {
 	// access token validate
 	var accessTokenAuthParameter = &AccessTokenAuthParameter{
 		AccessToken: parameter.AccessToken,
@@ -97,7 +97,7 @@ func (this *authServiceImpl) AuthRefresh(ctx context.Context, parameter *AuthRef
 	return this.NewAuth(ctx, newAuthParameter, result)
 }
 
-func (this *authServiceImpl) AccessTokenAuth(ctx context.Context, parameter *AccessTokenAuthParameter, accessTokenItem *TokenItem) error {
+func (this *serviceImpl) AccessTokenAuth(ctx context.Context, parameter *AccessTokenAuthParameter, accessTokenItem *TokenItem) error {
 	// parse token
 	var accessTokenClaims *TokenClaims; var err error
 	if accessTokenClaims, err = parseToken(parameter.AccessToken); err != nil {

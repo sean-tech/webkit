@@ -2,21 +2,17 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="cd233f99-4e0a-4955-bb53-dbf9ace9c633" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/config/etcd.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/auth/auth_api.go" beforeDir="false" afterPath="$PROJECT_DIR$/auth/auth_api.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/auth/auth_dao.go" beforeDir="false" afterPath="$PROJECT_DIR$/auth/auth_dao.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/auth/auth_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/auth/auth_service.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/auth/auth_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/auth/auth_test.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/auth/interface.go" beforeDir="false" afterPath="$PROJECT_DIR$/auth/interface.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/config.go" beforeDir="false" afterPath="$PROJECT_DIR$/config/config.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/etcd_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/config/etcd_test.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/secret.go" beforeDir="false" afterPath="$PROJECT_DIR$/config/secret.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/secret_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/config/secret_test.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/database/mysql.go" beforeDir="false" afterPath="$PROJECT_DIR$/database/mysql.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/database/redis.go" beforeDir="false" afterPath="$PROJECT_DIR$/database/redis.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/database/redis_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/database/redis_test.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/gohttp/secret.go" beforeDir="false" afterPath="$PROJECT_DIR$/gohttp/secret.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gohttp/secret_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/gohttp/secret_test.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/webkit_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/webkit_test.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -69,7 +65,7 @@
       <recent name="$PROJECT_DIR$/gohttp" />
     </key>
   </component>
-  <component name="RunManager" selected="Go Test.TestAuthServer in github.com/sean-tech/webkit/auth">
+  <component name="RunManager" selected="Go Test.TestNewAuth in github.com/sean-tech/webkit/auth">
     <configuration name="TestAuthServer in github.com/sean-tech/webkit/auth" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
       <module name="webkit" />
       <working_directory value="$PROJECT_DIR$/auth" />
@@ -81,57 +77,57 @@
       <pattern value="^TestAuthServer$" />
       <method v="2" />
     </configuration>
-    <configuration name="TestClientUserCall in github.com/sean-tech/webkit" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+    <configuration name="TestGetEmpty in github.com/sean-tech/webkit/database" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
       <module name="webkit" />
-      <working_directory value="$PROJECT_DIR$" />
+      <working_directory value="$PROJECT_DIR$/database" />
       <framework value="gotest" />
       <kind value="PACKAGE" />
-      <package value="github.com/sean-tech/webkit" />
+      <package value="github.com/sean-tech/webkit/database" />
       <directory value="$PROJECT_DIR$/" />
       <filePath value="$PROJECT_DIR$/" />
-      <pattern value="^TestClientUserCall$" />
+      <pattern value="^TestGetEmpty$" />
       <method v="2" />
     </configuration>
-    <configuration name="TestConfigEnc in github.com/sean-tech/webkit/config" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+    <configuration name="TestGetNil in github.com/sean-tech/webkit/auth" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
       <module name="webkit" />
-      <working_directory value="$PROJECT_DIR$/config" />
+      <working_directory value="$PROJECT_DIR$/auth" />
       <framework value="gotest" />
       <kind value="PACKAGE" />
-      <package value="github.com/sean-tech/webkit/config" />
+      <package value="github.com/sean-tech/webkit/auth" />
       <directory value="$PROJECT_DIR$/" />
       <filePath value="$PROJECT_DIR$/" />
-      <pattern value="^TestConfigEnc$" />
+      <pattern value="^TestGetNil$" />
       <method v="2" />
     </configuration>
-    <configuration name="TestEnc in github.com/sean-tech/webkit/config" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+    <configuration name="TestJwt in github.com/sean-tech/webkit/gohttp" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
       <module name="webkit" />
-      <working_directory value="$PROJECT_DIR$/config" />
+      <working_directory value="$PROJECT_DIR$/gohttp" />
       <framework value="gotest" />
       <kind value="PACKAGE" />
-      <package value="github.com/sean-tech/webkit/config" />
+      <package value="github.com/sean-tech/webkit/gohttp" />
       <directory value="$PROJECT_DIR$/" />
       <filePath value="$PROJECT_DIR$/" />
-      <pattern value="^TestEnc$" />
+      <pattern value="^TestJwt$" />
       <method v="2" />
     </configuration>
-    <configuration name="TestUserServer in github.com/sean-tech/webkit" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+    <configuration name="TestNewAuth in github.com/sean-tech/webkit/auth" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
       <module name="webkit" />
-      <working_directory value="$PROJECT_DIR$" />
+      <working_directory value="$PROJECT_DIR$/auth" />
       <framework value="gotest" />
       <kind value="PACKAGE" />
-      <package value="github.com/sean-tech/webkit" />
+      <package value="github.com/sean-tech/webkit/auth" />
       <directory value="$PROJECT_DIR$/" />
       <filePath value="$PROJECT_DIR$/" />
-      <pattern value="^TestUserServer$" />
+      <pattern value="^TestNewAuth$" />
       <method v="2" />
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Go Test.TestNewAuth in github.com/sean-tech/webkit/auth" />
         <item itemvalue="Go Test.TestAuthServer in github.com/sean-tech/webkit/auth" />
-        <item itemvalue="Go Test.TestClientUserCall in github.com/sean-tech/webkit" />
-        <item itemvalue="Go Test.TestUserServer in github.com/sean-tech/webkit" />
-        <item itemvalue="Go Test.TestConfigEnc in github.com/sean-tech/webkit/config" />
-        <item itemvalue="Go Test.TestEnc in github.com/sean-tech/webkit/config" />
+        <item itemvalue="Go Test.TestGetEmpty in github.com/sean-tech/webkit/database" />
+        <item itemvalue="Go Test.TestGetNil in github.com/sean-tech/webkit/auth" />
+        <item itemvalue="Go Test.TestJwt in github.com/sean-tech/webkit/gohttp" />
       </list>
     </recent_temporary>
   </component>
@@ -163,46 +159,46 @@
     <proxy>https://goproxy.io</proxy>
   </component>
   <component name="WindowStateProjectService">
-    <state width="1960" height="367" key="GridCell.Tab.0.bottom" timestamp="1591149770429">
+    <state width="1960" height="367" key="GridCell.Tab.0.bottom" timestamp="1591262592731">
       <screen x="0" y="22" width="2560" height="1418" />
     </state>
-    <state width="1960" height="367" key="GridCell.Tab.0.bottom/0.22.2560.1418@0.22.2560.1418" timestamp="1591149770429" />
-    <state width="1960" height="367" key="GridCell.Tab.0.center" timestamp="1591149770428">
+    <state width="1960" height="367" key="GridCell.Tab.0.bottom/0.22.2560.1418@0.22.2560.1418" timestamp="1591262592731" />
+    <state width="1960" height="367" key="GridCell.Tab.0.center" timestamp="1591262592730">
       <screen x="0" y="22" width="2560" height="1418" />
     </state>
-    <state width="1960" height="367" key="GridCell.Tab.0.center/0.22.2560.1418@0.22.2560.1418" timestamp="1591149770428" />
-    <state width="1960" height="367" key="GridCell.Tab.0.left" timestamp="1591149770427">
+    <state width="1960" height="367" key="GridCell.Tab.0.center/0.22.2560.1418@0.22.2560.1418" timestamp="1591262592730" />
+    <state width="1960" height="367" key="GridCell.Tab.0.left" timestamp="1591262592730">
       <screen x="0" y="22" width="2560" height="1418" />
     </state>
-    <state width="1960" height="367" key="GridCell.Tab.0.left/0.22.2560.1418@0.22.2560.1418" timestamp="1591149770427" />
-    <state width="1960" height="367" key="GridCell.Tab.0.right" timestamp="1591149770428">
+    <state width="1960" height="367" key="GridCell.Tab.0.left/0.22.2560.1418@0.22.2560.1418" timestamp="1591262592730" />
+    <state width="1960" height="367" key="GridCell.Tab.0.right" timestamp="1591262592731">
       <screen x="0" y="22" width="2560" height="1418" />
     </state>
-    <state width="1960" height="367" key="GridCell.Tab.0.right/0.22.2560.1418@0.22.2560.1418" timestamp="1591149770428" />
-    <state width="1960" height="370" key="GridCell.Tab.1.bottom" timestamp="1591091080733">
+    <state width="1960" height="367" key="GridCell.Tab.0.right/0.22.2560.1418@0.22.2560.1418" timestamp="1591262592731" />
+    <state width="1960" height="370" key="GridCell.Tab.1.bottom" timestamp="1591262329039">
       <screen x="0" y="22" width="2560" height="1418" />
     </state>
-    <state width="1960" height="370" key="GridCell.Tab.1.bottom/0.22.2560.1418@0.22.2560.1418" timestamp="1591091080733" />
-    <state width="1960" height="370" key="GridCell.Tab.1.center" timestamp="1591091080732">
+    <state width="1960" height="370" key="GridCell.Tab.1.bottom/0.22.2560.1418@0.22.2560.1418" timestamp="1591262329039" />
+    <state width="1960" height="370" key="GridCell.Tab.1.center" timestamp="1591262329038">
       <screen x="0" y="22" width="2560" height="1418" />
     </state>
-    <state width="1960" height="370" key="GridCell.Tab.1.center/0.22.2560.1418@0.22.2560.1418" timestamp="1591091080732" />
-    <state width="1960" height="370" key="GridCell.Tab.1.left" timestamp="1591091080732">
+    <state width="1960" height="370" key="GridCell.Tab.1.center/0.22.2560.1418@0.22.2560.1418" timestamp="1591262329038" />
+    <state width="1960" height="370" key="GridCell.Tab.1.left" timestamp="1591262329038">
       <screen x="0" y="22" width="2560" height="1418" />
     </state>
-    <state width="1960" height="370" key="GridCell.Tab.1.left/0.22.2560.1418@0.22.2560.1418" timestamp="1591091080732" />
-    <state width="1960" height="370" key="GridCell.Tab.1.right" timestamp="1591091080733">
+    <state width="1960" height="370" key="GridCell.Tab.1.left/0.22.2560.1418@0.22.2560.1418" timestamp="1591262329038" />
+    <state width="1960" height="370" key="GridCell.Tab.1.right" timestamp="1591262329038">
       <screen x="0" y="22" width="2560" height="1418" />
     </state>
-    <state width="1960" height="370" key="GridCell.Tab.1.right/0.22.2560.1418@0.22.2560.1418" timestamp="1591091080733" />
+    <state width="1960" height="370" key="GridCell.Tab.1.right/0.22.2560.1418@0.22.2560.1418" timestamp="1591262329038" />
     <state x="787" y="326" key="SettingsEditor" timestamp="1589597314045">
       <screen x="0" y="22" width="2560" height="1418" />
     </state>
     <state x="787" y="326" key="SettingsEditor/0.22.2560.1418@0.22.2560.1418" timestamp="1589597314045" />
-    <state width="745" height="658" key="XDebugger.FullValuePopup" timestamp="1591090991688">
+    <state width="745" height="658" key="XDebugger.FullValuePopup" timestamp="1591261515132">
       <screen x="0" y="22" width="2560" height="1418" />
     </state>
-    <state width="745" height="658" key="XDebugger.FullValuePopup/0.22.2560.1418@0.22.2560.1418" timestamp="1591090991688" />
+    <state width="745" height="658" key="XDebugger.FullValuePopup/0.22.2560.1418@0.22.2560.1418" timestamp="1591261515132" />
     <state x="897" y="429" width="600" height="490" key="find.popup" timestamp="1591094553463">
       <screen x="0" y="22" width="2560" height="1418" />
     </state>
