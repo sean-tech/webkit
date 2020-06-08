@@ -74,21 +74,21 @@ var (
 	_daoOnce     sync.Once
 )
 
-func GetApi() IUserApi {
+func Api() IUserApi {
 	_apiOnce.Do(func() {
 		_api = new(userApiImpl)
 	})
 	return _api
 }
 
-func GetService() IUserService {
+func Service() IUserService {
 	_serviceOnce.Do(func() {
 		_service = new(userServiceImpl)
 	})
 	return _service
 }
 
-func getDao() iUserDao {
+func dao() iUserDao {
 	_daoOnce.Do(func() {
 		_dao = new(userDaoImpl)
 	})
@@ -108,7 +108,7 @@ func (this *userApiImpl) UserLogin(ctx *gin.Context) {
 		return
 	}
 	var userInfo = new(UserInfo)
-	if err := GetService().UserLogin(ctx, &parameter, userInfo); err != nil {
+	if err := Service().UserLogin(ctx, &parameter, userInfo); err != nil {
 		g.ResponseError(err)
 		return
 	}
@@ -125,7 +125,7 @@ func (this *userApiImpl) UserGet(ctx *gin.Context) {
 		return
 	}
 	var user = new(User)
-	if err := GetService().UserGet(ctx, &parameter, user); err != nil {
+	if err := Service().UserGet(ctx, &parameter, user); err != nil {
 		g.ResponseError(err)
 		return
 	}
@@ -140,7 +140,7 @@ func (this *userServiceImpl) UserLogin(ctx context.Context, parameter *UserLogin
 	if err := validate.ValidateParameter(parameter); err != nil {
 		return err
 	}
-	if model_user, err := getDao().UserGetByUserNameAndPassword(parameter.UserName, parameter.Password); err != nil {
+	if model_user, err := dao().UserGetByUserNameAndPassword(parameter.UserName, parameter.Password); err != nil {
 		return err
 	} else {
 		userInfo.User = model_user
@@ -164,7 +164,7 @@ func (this *userServiceImpl) UserGet(ctx context.Context, parameter *UserGetPara
 	if err := validate.ValidateParameter(parameter); err != nil {
 		return err
 	}
-	if model_user, err := getDao().UserGetByUserId(parameter.UserId); err != nil {
+	if model_user, err := dao().UserGetByUserId(parameter.UserId); err != nil {
 		return err
 	} else {
 		*user = *model_user
@@ -246,7 +246,7 @@ func TestUserServer(t *testing.T) {
 }
 
 func RegisterService(server *server.Server)  {
-	server.RegisterName(SERVICE_USER, GetService(), "")
+	server.RegisterName(SERVICE_USER, Service(), "")
 }
 
 func RegisterApi(engine *gin.Engine)  {
@@ -273,8 +273,8 @@ func RegisterApi(engine *gin.Engine)  {
 
 	apiv1 := engine.Group("api/v1/user/")
 	{
-		apiv1.POST("login", GetApi().UserLogin)
-		apiv1.POST("get", tokenHandler, gohttp.SecretManager().InterceptAes(), GetApi().UserGet)
+		apiv1.POST("login", Api().UserLogin)
+		apiv1.POST("get", tokenHandler, gohttp.SecretManager().InterceptAes(), Api().UserGet)
 	}
 }
 

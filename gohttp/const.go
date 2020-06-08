@@ -13,6 +13,7 @@ const (
 
 	// secret
 	STATUS_CODE_SECRET_CHECK_FAILED    			= 843
+	STATUS_CODE_PERMISSION_DENIED    			= 844
 
 	// upload
 	STATUS_CODE_UPLOAD_FILE_SAVE_FAILED        	= 811
@@ -30,6 +31,7 @@ const (
 
 	// secret
 	STATUS_MSG_SECRET_CHECK_FAILED    			= "安全校验失败"
+	STATUS_MSG_PERMISSION_DENIED    			= "您没有访问权限"
 
 	// upload
 	STATUS_MSG_UPLOAD_FILE_SAVE_FAILED        	= "文件保存失败"
