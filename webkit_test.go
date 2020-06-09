@@ -227,6 +227,14 @@ var debugConfig = &config.AppConfig{
 		IdleTimeout: 200 * time.Second,
 	},
 }
+
+var cmdParams = &config.CmdParams{
+	EtcdEndPoints:      []string{"127.0.0.1:2379"},
+	EtcdConfigPath:     "/sean-tech/webkit/config",
+	EtcdConfigUserName: "root",
+	EtcdConfigPassword: "etcd.user.root.pwd",
+}
+
 func TestUserServer(t *testing.T) {
 	logging.Setup(logging.LogConfig{
 		LogSavePath: "/Users/sean/Desktop/",
@@ -235,7 +243,7 @@ func TestUserServer(t *testing.T) {
 	// concurrent
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	// config
-	config.Setup("user", "asdzxczcq", debugConfig, func(appConfig *config.AppConfig) {
+	config.Setup("user", "asdzxczcq", debugConfig, cmdParams, func(appConfig *config.AppConfig) {
 		// database start
 		database.SetupRedis(*appConfig.Redis).Open()
 		// service start

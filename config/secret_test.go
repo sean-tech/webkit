@@ -38,7 +38,7 @@ func TestConfigEnc(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if appConfig, err := configDecrypt(secret, module, salt); err != nil {
+	if appConfig, err := ConfigDecrypt(secret, module, salt); err != nil {
 		t.Error(err)
 	} else {
 		fmt.Println(appConfig)

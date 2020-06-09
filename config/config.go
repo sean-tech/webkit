@@ -49,7 +49,7 @@ type ConfigLoad func(appConfig *AppConfig)
 /**
  * 初始化config，通过etcd注册中心
  */
-func Setup(module, salt string, debugConfig *AppConfig, load ConfigLoad) {
+func Setup(module, salt string, debugConfig *AppConfig, debugCmd *CmdParams, load ConfigLoad) {
 	// runmode
 	runmode_usage := "please use -runmode to pointing at runmode, incase 'debug', 'test' and 'release'."
 	runmode := flag.String("runmode", "debug", runmode_usage)
@@ -62,6 +62,11 @@ func Setup(module, salt string, debugConfig *AppConfig, load ConfigLoad) {
 	// parse value validate
 	switch *runmode {
 	case foundation.RUN_MODE_DEBUG:
+		if debugCmd == nil {
+			panic("cmd params is nil in debug env")
+		}
+		_params = debugCmd
+		clientInit()
 		log.Println("config load success in ", *runmode)
 		load(debugConfig)
 

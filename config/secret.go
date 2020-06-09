@@ -31,7 +31,7 @@ func CmdEncrypt(params CmdParams, module, ip, salt string) string {
 
 	var originkey = fmt.Sprintf("%s/%s@%s", module, ip, salt)
 	md5Value := encrypt.GetMd5().Encrypt([]byte(originkey))
-	fmt.Println(md5Value)
+	//fmt.Println(md5Value)
 	key := generateKey([]byte(md5Value))
 
 	var encryptData []byte
@@ -39,7 +39,7 @@ func CmdEncrypt(params CmdParams, module, ip, salt string) string {
 		panic(err)
 	}
 	secret := base64.StdEncoding.EncodeToString(encryptData)
-	fmt.Println(secret)
+	//fmt.Println(secret)
 	return secret
 }
 
@@ -50,7 +50,7 @@ func cmdDecrypt(secret string, module, salt string) *CmdParams {
 	if ips = GetLocalIP(); ips == nil {
 		panic("local ip got failed")
 	}
-	fmt.Printf("%+v", ips)
+	//fmt.Printf("%+v", ips)
 
 	var encryptData []byte
 	var err error
@@ -61,7 +61,7 @@ func cmdDecrypt(secret string, module, salt string) *CmdParams {
 	for _, ip := range ips {
 		var originkey = fmt.Sprintf("%s/%s@%s", module, ip, salt)
 		md5Value := encrypt.GetMd5().Encrypt([]byte(originkey))
-		fmt.Println(md5Value)
+		//fmt.Println(md5Value)
 		key := generateKey([]byte(md5Value))
 		if decryptData, err = encrypt.GetAes().DecryptCBC(encryptData, key); decryptData == nil || err != nil {
 			continue
@@ -73,7 +73,7 @@ func cmdDecrypt(secret string, module, salt string) *CmdParams {
 	if params == nil {
 		panic("decrypt failed")
 	}
-	fmt.Println(params)
+	//fmt.Println(params)
 	return params
 }
 
@@ -89,7 +89,7 @@ func configEncrypt(cfg *AppConfig, module, salt string) (string, error) {
 
 	var originkey = fmt.Sprintf("%s/%s@%s", _params.EtcdConfigPath, module, salt)
 	md5Value := encrypt.GetMd5().Encrypt([]byte(originkey))
-	fmt.Println(md5Value)
+	//fmt.Println(md5Value)
 	key := generateKey([]byte(md5Value))
 
 	var encryptData []byte
@@ -97,20 +97,14 @@ func configEncrypt(cfg *AppConfig, module, salt string) (string, error) {
 		panic(err)
 	}
 	secret := base64.StdEncoding.EncodeToString(encryptData)
-	fmt.Println(secret)
+	//fmt.Println(secret)
 	return secret, nil
 }
 
-func configDecrypt(secret string, module, salt string) (cfg *AppConfig, err error) {
+func ConfigDecrypt(secret string, module, salt string) (cfg *AppConfig, err error) {
 	if _params == nil {
 		panic(errors.New("etcd client init with nil cmd params"))
 	}
-
-	var ips []string
-	if ips = GetLocalIP(); ips == nil {
-		panic("local ip got failed")
-	}
-	fmt.Printf("%+v", ips)
 
 	var encryptData []byte
 	if encryptData, err = base64.StdEncoding.DecodeString(secret); err != nil {
@@ -120,7 +114,7 @@ func configDecrypt(secret string, module, salt string) (cfg *AppConfig, err erro
 	var decryptData []byte
 	var originkey = fmt.Sprintf("%s/%s@%s", _params.EtcdConfigPath, module, salt)
 	md5Value := encrypt.GetMd5().Encrypt([]byte(originkey))
-	fmt.Println(md5Value)
+	//fmt.Println(md5Value)
 	key := generateKey([]byte(md5Value))
 	if decryptData, err = encrypt.GetAes().DecryptCBC(encryptData, key); decryptData == nil || err != nil {
 		return nil, err
@@ -130,7 +124,7 @@ func configDecrypt(secret string, module, salt string) (cfg *AppConfig, err erro
 	if err := json.Unmarshal(decryptData, cfg); err != nil {
 		panic(err)
 	}
-	fmt.Println(cfg)
+	//fmt.Println(cfg)
 	return cfg, nil
 }
 
@@ -149,7 +143,7 @@ func generateKey(key []byte) (genKey []byte) {
 func GetLocalIP() (ips []string){
 	addrs,err := net.InterfaceAddrs()
 	if err != nil{
-		fmt.Println("get ip arr failed: ",err)
+		//fmt.Println("get ip arr failed: ",err)
 		return nil
 	}
 	for _,addr := range addrs{

@@ -57,9 +57,9 @@ func GetConfig(module, salt string) (cfg *AppConfig, err error) {
 	} else if len(resp.Kvs) != 1 {
 		return nil, errors.New("config get error:kvs count not only one")
 	} else {
-		fmt.Printf("%+v\n", resp.Kvs)
+		//fmt.Printf("%+v\n", resp.Kvs)
 		kv := resp.Kvs[0]
-		if cfg, err := configDecrypt(string(kv.Value), module, salt); err != nil {
+		if cfg, err := ConfigDecrypt(string(kv.Value), module, salt); err != nil {
 			return nil, err
 		} else {
 			return cfg, nil
@@ -97,7 +97,7 @@ func GetWorkerId(module, ip string) (workerId int64, err error) {
 	} else if len(resp.Kvs) != 1 {
 		return 0, errors.New("config get error:kvs count not only one")
 	} else {
-		fmt.Printf("%+v\n", resp.Kvs)
+		//fmt.Printf("%+v\n", resp.Kvs)
 		kv := resp.Kvs[0]
 		if workerId, err = strconv.ParseInt(string(kv.Value), 10, 64); err != nil {
 			return 0, err
@@ -128,7 +128,7 @@ func GetAllWorkers(module string) (workers []Worker, err error) {
 		return nil, err
 	}
 
-	fmt.Printf("%+v\n", resp.Kvs)
+	//fmt.Printf("%+v\n", resp.Kvs)
 	for _, kv := range resp.Kvs {
 		var workerId int64
 		if workerId, err = strconv.ParseInt(string(kv.Value), 10, 64); err != nil {
@@ -141,4 +141,17 @@ func GetAllWorkers(module string) (workers []Worker, err error) {
 		})
 	}
 	return workers, nil
+}
+
+func GetAllModules() (modules []string, err error) {
+	var path = fmt.Sprintf("%s/", _params.EtcdConfigPath)
+	var resp *clientv3.GetResponse
+	if resp, err = _cli.Get(context.Background(), path, clientv3.WithPrefix()); err != nil {
+		return nil, err
+	}
+	for _, kv := range resp.Kvs {
+		module := strings.Replace(string(kv.Key), path, "", 1)
+		modules = append(modules, module)
+	}
+	return modules, nil
 }
