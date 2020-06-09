@@ -260,15 +260,15 @@ func RegisterApi(engine *gin.Engine)  {
 	//	ClientPubKey:     string(clientPubKeyBytes),
 	//})
 
-	var tokenHandler =  gohttp.SecretManager().InterceptToken(func(ctx context.Context, token string) (userId uint64, userName, key string, err error) {
+	var tokenHandler =  gohttp.SecretManager().InterceptToken(func(ctx context.Context, token string) (userId, roleId uint64, userName, key string, err error) {
 		var parameter = &auth.AccessTokenAuthParameter{
 			AccessToken: token,
 		}
 		var accessTokenItem = new(auth.TokenItem)
 		if err := gorpc.Call(SERVICE_AUTH, ctx, AUTH_METHOD_ACCESSTOKEN_AUTH, parameter, accessTokenItem); err != nil {
-			return 0, "", "", err
+			return 0, 0, "", "", err
 		}
-		return accessTokenItem.UserId, accessTokenItem.UserName, accessTokenItem.Key, nil
+		return accessTokenItem.UserId, accessTokenItem.RoleId, accessTokenItem.UserName, accessTokenItem.Key, nil
 	})
 
 	apiv1 := engine.Group("api/v1/user/")

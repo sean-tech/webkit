@@ -16,6 +16,7 @@ type TokenItem struct {
 	UUID 		string 		`json:"uuid"`
 	SignedId	string		`json:"signed_id"`
 	UserId 		uint64 		`json:"userId"`
+	RoleId 		uint64 		`json:"roleId"`
 	UserName 	string 		`json:"userName"`
 	Token   	string		`json:"token"`
 	Key     	string		`json:"key"`
@@ -26,6 +27,7 @@ type NewAuthParameter struct {
 	AuthCode 	string		`json:"auth_code" validate:"required,gte=1"`
 	UUID 		string		`json:"uuid" validate:"required,gte=1"`
 	UserId 		uint64		`json:"userid" validate:"required,gte=1"`
+	RoleId 		uint64		`json:"roleid" validate:"required,gte=1"`
 	UserName 	string		`json:"username" validate:"required,gte=1"`
 	Client 		string		`json:"client" validate:"required,gte=1"`
 }

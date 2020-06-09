@@ -12,7 +12,7 @@ import (
 	"sync"
 )
 
-type TokenParseFunc func(ctx context.Context, token string) (userId uint64, userName, key string, err error)
+type TokenParseFunc func(ctx context.Context, token string) (userId, roleId uint64, userName, key string, err error)
 
 type SecretParams struct {
 	Secret string	`json:"secret" validate:"required,base64"`
@@ -94,12 +94,13 @@ func (this *secretManagerImpl) InterceptRsa(rsa *RsaConfig) gin.HandlerFunc {
 func (this *secretManagerImpl) InterceptToken(tokenParse TokenParseFunc) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		g := Gin{ctx}
-		if userId, userName, key, err := tokenParse(ctx, ctx.GetHeader("Authorization")); err != nil {
+		if userId, roleId, userName, key, err := tokenParse(ctx, ctx.GetHeader("Authorization")); err != nil {
 			g.ResponseError(err)
 			ctx.Abort()
 			return
 		} else {
 			foundation.GetRequisition(ctx).UserId = userId
+			foundation.GetRequisition(ctx).RoleId = roleId
 			foundation.GetRequisition(ctx).UserName = userName
 			g.getRequisition().Key, _ = hex.DecodeString(key)
 			// next

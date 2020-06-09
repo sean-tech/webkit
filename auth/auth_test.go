@@ -109,6 +109,7 @@ func TestNewAuth(t *testing.T) {
 		"auth_code" : "this is auth code for validate",
 		"uuid" : "kasnzncuhbajdjabdjazxc12345asd",
 		"userid" : 12300901101,
+		"roleid" : 1001,
 		"username" : "sean",
 		"client" : "iOS",
 	}
