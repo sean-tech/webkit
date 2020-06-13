@@ -16,7 +16,8 @@ const (
 
 var _cli *clientv3.Client
 
-func clientInit() {
+func clientInit(params *CmdParams) {
+	_params = params
 	if _params == nil {
 		panic(errors.New("etcd client init with nil cmd params"))
 	}

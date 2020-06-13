@@ -5,9 +5,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/sean-tech/gokit/encrypt"
 	"github.com/sean-tech/gokit/foundation"
+	"github.com/sean-tech/gokit/requisition"
 	"github.com/sean-tech/gokit/validate"
 	"io"
 	"log"
@@ -38,6 +40,8 @@ type HttpConfig struct {
 	HttpPort            int				`json:"http_port" validate:"required,min=1,max=10000"`
 	ReadTimeout         time.Duration	`json:"read_timeout" validate:"required,gte=1"`
 	WriteTimeout        time.Duration	`json:"write_timeout" validate:"required,gte=1"`
+	CorsAllow			bool			`json:"cors_allow"`
+	CorsAllowOrigins	[]string		`json:"cors_allow_origins"`
 }
 
 /** 服务注册回调函数 **/
@@ -74,26 +78,38 @@ func HttpServerServe(config HttpConfig, logger IGinLogger, registerFunc GinRegis
 	engine.Use(gin.Recovery())
 	//engine.StaticFS(config.Upload.FileSavePath, http.Dir(GetUploadFilePath()))
 	engine.Use(func(ctx *gin.Context) {
-		newRequestion(ctx)
-		foundation.NewRequestion(ctx).RequestId = uint64(_idWorker.GetId())
-		ctx.Set(key_request_id, foundation.GetRequisition(ctx).RequestId)
+		var lang = ctx.GetHeader("Accept-Language")
+		if  lang == "" {
+			lang = requisition.LangeageZh
+		}
+		newGinRequestion(ctx).Language = lang
+		var requestId = uint64(_idWorker.GetId())
+		requisition.NewRequestion(ctx).RequestId = requestId
+		ctx.Set(key_request_id, requestId)
 		ctx.Next()
 	})
 	engine.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
 		// 你的自定义格式
-		return fmt.Sprintf("[GIN] %s request_id:%d | %s | \"%s %s %s %d %s \"%s\" %s\"\n",
-			param.TimeStamp.Format("2006-01-02 15:04:05"),
+		return fmt.Sprintf("[GIN]%s requestid:%d clientip:%s method:%s path:%s code:%d errmsg:%s\n",
+			param.TimeStamp.Format("2006/01/02 15:04:05"),
 			param.Keys[key_request_id].(uint64),
 			param.ClientIP,
 			param.Method,
 			param.Path,
-			param.Request.Proto,
 			param.StatusCode,
-			param.Latency,
-			param.Request.UserAgent(),
 			param.ErrorMessage,
-		)
+			)
 	}))
+	if config.CorsAllow {
+		if config.CorsAllowOrigins != nil {
+			corscfg := cors.DefaultConfig()
+			corscfg.AllowOrigins = config.CorsAllowOrigins
+			engine.Use(cors.New(corscfg))
+		} else {
+			engine.Use(cors.Default())
+		}
+
+	}
 	registerFunc(engine)
 	// server
 	s := http.Server{
@@ -129,7 +145,8 @@ type Gin struct {
 /**
  * 服务信息
  */
-type requisition struct {
+type ginRequisition struct {
+	Language 	 string
 	SecretMethod secret_method `json:"secretMethod"`
 	Params       []byte        `json:"params"`
 	Key          []byte        `json:"key"`
@@ -139,8 +156,8 @@ type requisition struct {
 /**
  * 请求信息创建，并绑定至context上
  */
-func newRequestion(ctx *gin.Context) *requisition {
-	rq := &requisition{
+func newGinRequestion(ctx *gin.Context) *ginRequisition {
+	rq := &ginRequisition{
 		SecretMethod: secret_method_nouse,
 		Params:       nil,
 		Key:          nil,
@@ -153,9 +170,9 @@ func newRequestion(ctx *gin.Context) *requisition {
 /**
  * 信息获取，获取传输链上context绑定的用户请求调用信息
  */
-func (g *Gin) getRequisition() *requisition {
+func (g *Gin) getGinRequisition() *ginRequisition {
 	obj := g.Ctx.Value(key_ctx_requestion)
-	if info, ok := obj.(*requisition); ok {
+	if info, ok := obj.(*ginRequisition); ok {
 		return  info
 	}
 	return nil
@@ -166,17 +183,17 @@ func (g *Gin) getRequisition() *requisition {
  */
 func (g *Gin) BindParameter(parameter interface{}) error {
 
-	switch g.getRequisition().SecretMethod {
+	switch g.getGinRequisition().SecretMethod {
 	case secret_method_nouse:
 		if err := g.Ctx.Bind(parameter); err != nil {
-			return foundation.NewError(STATUS_CODE_INVALID_PARAMS, err.Error())
+			return foundation.NewError(err, STATUS_CODE_INVALID_PARAMS, err.Error())
 		}
 		g.LogRequestParam(parameter)
 		return nil
 	case secret_method_aes:fallthrough
 	case secret_method_rsa:
-		if err := json.Unmarshal(g.getRequisition().Params, parameter); err != nil {
-			return foundation.NewError(STATUS_CODE_INVALID_PARAMS, err.Error())
+		if err := json.Unmarshal(g.getGinRequisition().Params, parameter); err != nil {
+			return foundation.NewError(err, STATUS_CODE_INVALID_PARAMS, err.Error())
 		}
 		g.LogRequestParam(parameter)
 		return nil
@@ -188,32 +205,36 @@ func (g *Gin) BindParameter(parameter interface{}) error {
  * 响应数据，成功，原数据转json返回
  */
 func (g *Gin) ResponseData(data interface{}) {
+	var code = STATUS_CODE_SUCCESS
+	var msg = requisition.Msg(g.getGinRequisition().Language, code)
 
-	var code StatusCode = STATUS_CODE_SUCCESS
-	switch g.getRequisition().SecretMethod {
+	switch g.getGinRequisition().SecretMethod {
 	case secret_method_nouse:
-		g.Response(code, code.Msg(), data, "")
+		g.LogResponseInfo(code, msg, data, "")
+		g.Response(code, msg, data, "")
 		return
 	case secret_method_aes:
 		jsonBytes, _ := json.Marshal(data)
-		if secretBytes, err := encrypt.GetAes().EncryptCBC(jsonBytes, g.getRequisition().Key); err == nil {
-			g.LogResponseInfo(code, code.Msg(), jsonBytes, "")
-			g.Response(code, code.Msg(), base64.StdEncoding.EncodeToString(secretBytes), "")
+		if secretBytes, err := encrypt.GetAes().EncryptCBC(jsonBytes, g.getGinRequisition().Key); err == nil {
+			g.LogResponseInfo(code, msg, jsonBytes, "")
+			g.Response(code, msg, base64.StdEncoding.EncodeToString(secretBytes), "")
 			return
 		}
-		g.Response(code, code.Msg(), data, "response data aes encrypt failed")
+		g.LogResponseInfo(code, msg, data, "response data aes encrypt failed")
+		g.Response(code, msg, data, "response data aes encrypt failed")
 		return
 	case secret_method_rsa:
 		jsonBytes, _ := json.Marshal(data)
-		if secretBytes, err := encrypt.GetRsa().Encrypt(g.getRequisition().Rsa.ClientPubKey, jsonBytes); err == nil {
-			if signBytes, err := encrypt.GetRsa().Sign(g.getRequisition().Rsa.ServerPriKey, jsonBytes); err == nil {
+		if secretBytes, err := encrypt.GetRsa().Encrypt(g.getGinRequisition().Rsa.ClientPubKey, jsonBytes); err == nil {
+			if signBytes, err := encrypt.GetRsa().Sign(g.getGinRequisition().Rsa.ServerPriKey, jsonBytes); err == nil {
 				sign := base64.StdEncoding.EncodeToString(signBytes)
-				g.LogResponseInfo(code, code.Msg(), jsonBytes, sign)
-				g.Response(code, code.Msg(), base64.StdEncoding.EncodeToString(secretBytes), sign)
+				g.LogResponseInfo(code, msg, jsonBytes, sign)
+				g.Response(code, msg, base64.StdEncoding.EncodeToString(secretBytes), sign)
 				return
 			}
 		}
-		g.Response(code, code.Msg(), data, "response data rsa encrypt failed")
+		g.LogResponseInfo(code, msg, data, "response data rsa encrypt failed")
+		g.Response(code, msg, data, "response data rsa encrypt failed")
 		return
 	}
 }
@@ -222,21 +243,21 @@ func (g *Gin) ResponseData(data interface{}) {
  * 响应数据，自定义error
  */
 func (g *Gin) ResponseError(err error) {
-	if e, ok := err.(CError); ok {
-		g.Response(StatusCode(e.Code()), e.Msg(), nil, "")
-		return
+	if e, ok := err.(requisition.IError); ok {
+		e.SetLang(g.getGinRequisition().Language)
 	}
+	if e, ok := err.(foundation.IError); ok {
+		g.LogResponseError(e.Code(), e.Msg(), e.Error())
+		g.Response(e.Code(), e.Msg(), nil, "")
+	}
+	g.LogResponseError(STATUS_CODE_FAILED, err.Error(), "")
 	g.Response(STATUS_CODE_FAILED, err.Error(), nil, "")
 }
 
 /**
  * 响应数据
  */
-func (g *Gin) Response(statusCode StatusCode, msg string, data interface{}, sign string) {
-
-	if g.getRequisition().SecretMethod == secret_method_nouse || statusCode != STATUS_CODE_SUCCESS {
-		g.LogResponseInfo(statusCode, msg, data, sign)
-	}
+func (g *Gin) Response(statusCode int, msg string, data interface{}, sign string) {
 	g.Ctx.JSON(http.StatusOK, gin.H{
 		"code" : statusCode,
 		"msg" :  msg,
@@ -256,27 +277,35 @@ func (g *Gin) LogRequestParam(parameter interface{}) {
 	if _logger == nil {
 		return
 	}
-	var requestion = foundation.GetRequisition(g.Ctx)
+	var req = requisition.GetRequisition(g.Ctx)
 	if jsonBytes, ok := parameter.([]byte); ok {
-		_logger.Gin("request_id:", requestion.RequestId, "user_name:", requestion.UserName, " | params:", string(jsonBytes), "\n")
+		_logger.Gin("requestid:", req.RequestId, " user_name:", req.UserName, " params:", string(jsonBytes), "\n")
 	} else if jsonBytes, err := json.Marshal(parameter); err == nil {
-		_logger.Gin("request_id:", requestion.RequestId, "user_name:", requestion.UserName, " | params:", string(jsonBytes), "\n")
+		_logger.Gin("requestid:", req.RequestId, " user_name:", req.UserName, " params:", string(jsonBytes), "\n")
 	} else {
-		_logger.Gin("request_id:", requestion.RequestId, "user_name:", requestion.UserName, " | params:", parameter, "\n")
+		_logger.Gin("requestid:", req.RequestId, " user_name:", req.UserName, " params:", parameter, "\n")
 	}
 }
 
-func (g *Gin) LogResponseInfo(statusCode StatusCode, msg string, data interface{}, sign string) {
+func (g *Gin) LogResponseInfo(code int, msg string, data interface{}, sign string) {
 	if _logger == nil {
 		return
 	}
-	var requestion = foundation.GetRequisition(g.Ctx)
+	var req = requisition.GetRequisition(g.Ctx)
 	if jsonBytes, ok := data.([]byte); ok {
-		_logger.Gin("request_id:", requestion.RequestId, "user_name:", requestion.UserName, " | response code:", statusCode, " | msg:", msg, " | data:", string(jsonBytes), " | sign:", sign, "\n")
+		_logger.Gin("requestid:", req.RequestId, " username:", req.UserName, " respcode:", code, " msg:", msg, " data:", string(jsonBytes), " sign:", sign, "\n")
 	} else if jsonBytes, err := json.Marshal(data); err == nil {
-		_logger.Gin("request_id:", requestion.RequestId, "user_name:", requestion.UserName, " | response code:", statusCode, " | msg:", msg, " | data:", string(jsonBytes), " | sign:", sign, "\n")
+		_logger.Gin("requestid:", req.RequestId, " username:", req.UserName, " respcode:", code, " msg:", msg, " data:", string(jsonBytes), " sign:", sign, "\n")
 	} else {
-		_logger.Gin("request_id:", requestion.RequestId, "user_name:", requestion.UserName, " | response code:", statusCode, " | msg:", msg, " | data:", data, " | sign:", sign, "\n")
+		_logger.Gin("requestid:", req.RequestId, " username:", req.UserName, " respcode:", code, " msg:", msg, " data:", data, " sign:", sign, "\n")
 	}
+}
+
+func (g *Gin) LogResponseError(code int, msg string, err string) {
+	if _logger == nil {
+		return
+	}
+	var req = requisition.GetRequisition(g.Ctx)
+	_logger.Gin("requestid:", req.RequestId, " username:", req.UserName, " respcode:", code, " msg:", msg, " error:", err, "\n")
 }
 

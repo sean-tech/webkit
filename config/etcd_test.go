@@ -5,6 +5,7 @@ import (
 	"github.com/sean-tech/webkit/database"
 	"github.com/sean-tech/webkit/gohttp"
 	"github.com/sean-tech/webkit/gorpc"
+	"github.com/sean-tech/webkit/logging"
 	"testing"
 	"time"
 )
@@ -13,13 +14,25 @@ const module = "user"
 const salt = "asdasdasdadzxczc"
 
 func TestPut(t *testing.T) {
-	if err := PutConfig(cfg, module, salt); err != nil {
+	clientInit(&CmdParams{
+		EtcdEndPoints:      []string{"127.0.0.1:2379"},
+		EtcdConfigPath:     "/sean-tech/webkit/config",
+		EtcdConfigUserName: "root",
+		EtcdConfigPassword: "etcd.user.root.pwd",
+	})
+	if err := PutConfig(testconfig, module, salt); err != nil {
 		t.Error(err)
 	}
 	fmt.Println("put success")
 }
 
 func TestDelete(t *testing.T) {
+	clientInit(&CmdParams{
+		EtcdEndPoints:      []string{"127.0.0.1:2379"},
+		EtcdConfigPath:     "/sean-tech/webkit/config",
+		EtcdConfigUserName: "root",
+		EtcdConfigPassword: "etcd.user.root.pwd",
+	})
 	if err := DeleteConfig(module); err != nil {
 		t.Error(err)
 	}
@@ -27,6 +40,12 @@ func TestDelete(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
+	clientInit(&CmdParams{
+		EtcdEndPoints:      []string{"127.0.0.1:2379"},
+		EtcdConfigPath:     "/sean-tech/webkit/config",
+		EtcdConfigUserName: "root",
+		EtcdConfigPassword: "etcd.user.root.pwd",
+	})
 	var cfg *AppConfig; var err error
 	if cfg, err = GetConfig(module, salt); err != nil {
 		t.Error(err)
@@ -35,7 +54,27 @@ func TestGet(t *testing.T) {
 	fmt.Printf("%+v\n", cfg)
 }
 
+func TestGetAllModules(t *testing.T) {
+	clientInit(&CmdParams{
+		EtcdEndPoints:      []string{"127.0.0.1:2379"},
+		EtcdConfigPath:     "/sean-tech/webkit/config",
+		EtcdConfigUserName: "root",
+		EtcdConfigPassword: "etcd.user.root.pwd",
+	})
+	if modules, err := GetAllModules(); err != nil {
+		t.Error(err)
+	} else {
+		fmt.Println(modules)
+	}
+}
+
 func TestPutWorkerId(t *testing.T) {
+	clientInit(&CmdParams{
+		EtcdEndPoints:      []string{"127.0.0.1:2379"},
+		EtcdConfigPath:     "/sean-tech/webkit/config",
+		EtcdConfigUserName: "root",
+		EtcdConfigPassword: "etcd.user.root.pwd",
+	})
 	if err := PutWorkerId(1, module, "192.168.1.20"); err != nil {
 		t.Error(err)
 	}
@@ -43,6 +82,12 @@ func TestPutWorkerId(t *testing.T) {
 }
 
 func TestGetWorkerId(t *testing.T) {
+	clientInit(&CmdParams{
+		EtcdEndPoints:      []string{"127.0.0.1:2379"},
+		EtcdConfigPath:     "/sean-tech/webkit/config",
+		EtcdConfigUserName: "root",
+		EtcdConfigPassword: "etcd.user.root.pwd",
+	})
 	if workerId, err := GetWorkerId(module, "192.168.1.20"); err != nil {
 		t.Error(err)
 	} else {
@@ -51,6 +96,12 @@ func TestGetWorkerId(t *testing.T) {
 }
 
 func TestDeleteWorkerId(t *testing.T) {
+	clientInit(&CmdParams{
+		EtcdEndPoints:      []string{"127.0.0.1:2379"},
+		EtcdConfigPath:     "/sean-tech/webkit/config",
+		EtcdConfigUserName: "root",
+		EtcdConfigPassword: "etcd.user.root.pwd",
+	})
 	if err := DeleteWorkerId(module, "192.168.1.20"); err != nil {
 		t.Error(err)
 	}
@@ -58,6 +109,12 @@ func TestDeleteWorkerId(t *testing.T) {
 }
 
 func TestGetAllWorkers(t *testing.T) {
+	clientInit(&CmdParams{
+		EtcdEndPoints:      []string{"127.0.0.1:2379"},
+		EtcdConfigPath:     "/sean-tech/webkit/config",
+		EtcdConfigUserName: "root",
+		EtcdConfigPassword: "etcd.user.root.pwd",
+	})
 	if workers, err := GetAllWorkers(module); err != nil {
 		t.Error(err)
 	} else {
@@ -66,7 +123,12 @@ func TestGetAllWorkers(t *testing.T) {
 }
 
 
-var cfg = &AppConfig{
+var testconfig = &AppConfig{
+	Log: &logging.LogConfig{
+		RunMode:     "debug",
+		LogSavePath: "/Users/sean/Desktop/",
+		LogPrefix:   "config",
+	},
 	RsaOpen: false,
 	Rsa:     nil,
 	Http:    &gohttp.HttpConfig{

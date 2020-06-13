@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"github.com/docker/libkv/store"
 	"github.com/rcrowley/go-metrics"
-	"github.com/sean-tech/gokit/foundation"
+	"github.com/sean-tech/gokit/requisition"
 	"github.com/sean-tech/gokit/validate"
 	"github.com/smallnest/rpcx/client"
 	rpcxLog "github.com/smallnest/rpcx/log"
@@ -210,7 +210,7 @@ func CreateClient(serviceName string) client.XClient {
 		cert, err := tls.X509KeyPair([]byte(_config.Tls.ServerCert), []byte(_config.Tls.ServerKey))
 		if err != nil {
 			if _logger != nil {
-				_logger.Errorf("[RPCX] unable to read cert.pem and cert.key : %s", err.Error())
+				_logger.Errorf("[RPCX]:unable to read cert.pem and cert.key : %s", err.Error())
 			}
 			goto OPTION_SECRET_SETED
 		}
@@ -218,7 +218,7 @@ func CreateClient(serviceName string) client.XClient {
 		ok := certPool.AppendCertsFromPEM([]byte(_config.Tls.CACert))
 		if !ok {
 			if _logger != nil {
-				_logger.Errorf("[RPCX] failed to parse root certificate : %s", err.Error())
+				_logger.Errorf("[RPCX]:failed to parse root certificate : %s", err.Error())
 			}
 			goto OPTION_SECRET_SETED
 		}
@@ -299,7 +299,7 @@ func ClientGo(client client.XClient, ctx context.Context, serviceMethod string, 
  */
 func clientAuth(client client.XClient, ctx context.Context) (context.Context, error) {
 	var req_id uint64 = 0; var user_id uint64 = 0; var user_name = ""
-	if req := foundation.GetRequisition(ctx); req != nil {
+	if req := requisition.GetRequisition(ctx); req != nil {
 		req_id = req.RequestId
 		user_id = req.UserId
 		user_name = req.UserName
@@ -312,7 +312,7 @@ func clientAuth(client client.XClient, ctx context.Context) (context.Context, er
 	}
 
 	if ctx == nil {
-		ctx = foundation.NewRequestionContext(context.Background())
+		ctx = requisition.NewRequestionContext(context.Background())
 	}
 	ctx = context.WithValue(context.Background(), share.ReqMetaDataKey, make(map[string]string))
 	return ctx, nil

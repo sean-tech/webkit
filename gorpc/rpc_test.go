@@ -4,7 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/sean-tech/gokit/logging"
+	"github.com/sean-tech/webkit/logging"
 	"github.com/smallnest/rpcx/client"
 	"github.com/smallnest/rpcx/server"
 	"io/ioutil"
@@ -39,12 +39,12 @@ func (this *userServiceImpl) UserAdd(ctx context.Context, parameter *UserAddPara
 
 func TestRpcServer(t *testing.T) {
 	logging.Setup(logging.LogConfig{
-		LogSavePath:     "/Users/lyra/Desktop/",
+		LogSavePath:     "/Users/sean/Desktop/",
 		LogPrefix:       "rpctest",
 	})
-	ServerCertBytes, _ := ioutil.ReadFile("/Users/lyra/Desktop/Go/secret/webkit/server1.pem")
-	ServerKeyBytes, _ := ioutil.ReadFile("/Users/lyra/Desktop/Go/secret/webkit/server1.key")
-	CACertBytes, _ := ioutil.ReadFile("/Users/lyra/Desktop/Go/secret/webkit/ca.pem")
+	ServerCertBytes, _ := ioutil.ReadFile("/Users/sean/Desktop/Go/secret/webkit/server1.pem")
+	ServerKeyBytes, _ := ioutil.ReadFile("/Users/sean/Desktop/Go/secret/webkit/server1.key")
+	CACertBytes, _ := ioutil.ReadFile("/Users/sean/Desktop/Go/secret/webkit/ca.pem")
 	_rpc_testing = true
 	ServerServe(RpcConfig{
 		RunMode:              "debug",

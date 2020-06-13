@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/sean-tech/gokit/logging"
 	"github.com/sean-tech/webkit/config"
 	"github.com/sean-tech/webkit/database"
 	"github.com/sean-tech/webkit/gohttp"
 	"github.com/sean-tech/webkit/gorpc"
+	"github.com/sean-tech/webkit/logging"
 	"github.com/smallnest/rpcx/server"
 	"io/ioutil"
 	"net/http"
@@ -22,61 +22,22 @@ const (
 	SERVICE_AUTH = "Auth"
 )
 
-var debugConfig = &config.AppConfig{
-	RsaOpen: false,
-	Rsa:     nil,
-	Http:    &gohttp.HttpConfig{
-		RunMode:      "debug",
-		WorkerId:     3,
-		HttpPort:     9012,
-		ReadTimeout:  60 * time.Second,
-		WriteTimeout: 60 * time.Second,
-	},
-	Rpc:     &gorpc.RpcConfig{
-		RunMode:              "debug",
-		RpcPort:              9011,
-		RpcPerSecondConnIdle: 500,
-		ReadTimeout:          60 * time.Second,
-		WriteTimeout:         60 * time.Second,
-		TokenSecret:          "th!@#isasd",
-		TokenIssuer:          "/sean-tech/webkit/auth",
-		TlsOpen:              false,
-		Tls:                  nil,
-		WhiteListOpen:        false,
-		WhiteListIps:         nil,
-		EtcdEndPoints:        []string{"127.0.0.1:2379"},
-		EtcdRpcBasePath:      "/sean-tech/webkit/auth/rpc",
-		EtcdRpcUserName:      "root",
-		EtcdRpcPassword:      "etcd.user.root.pwd",
-	},
-	Mysql:   nil,
-	Redis:   &database.RedisConfig{
-		Host:        "127.0.0.1:6379",
-		Password:    "",
-		MaxIdle:     30,
-		MaxActive:   30,
-		IdleTimeout: 200 * time.Second,
-	},
-}
-
 var authConfig = AuthConfig{
 	WorkerId: 				 1,
 	TokenSecret:             "thisnand!abn",
 	TokenIssuer:             "sean-tech/webkit/auth",
 	RefreshTokenExpiresTime: 120 * time.Second,
 	AccessTokenExpiresTime:  30 * time.Second,
+	AuthCode: "this is auth code for validate",
 }
 
 func TestAuthServer(t *testing.T) {
-
-	logging.Setup(logging.LogConfig{
-		LogSavePath: "/Users/sean/Desktop/",
-		LogPrefix:   "auth",
-	})
 	// concurrent
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	// config
-	config.Setup("auth", "adzxcqwrz", debugConfig, func(appConfig *config.AppConfig) {
+	config.Setup("auth", "adzxcqwrz", "../config/config.json", "", func(appConfig *config.AppConfig) {
+		// log start
+		logging.Setup(*appConfig.Log)
 		// database start
 		database.SetupRedis(*appConfig.Redis).Open()
 		// auth setup

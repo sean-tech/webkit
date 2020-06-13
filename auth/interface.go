@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/gin-gonic/gin"
 	"github.com/sean-tech/gokit/foundation"
+	"github.com/sean-tech/gokit/requisition"
 	"github.com/sean-tech/gokit/validate"
 	"strconv"
 	"sync"
@@ -89,7 +90,7 @@ func Api() IAuthApi {
 func Service() IAuthService {
 	_serviceOnce.Do(func() {
 		_service = &serviceImpl{
-			authCode: "this is auth code for validate",
+			authCode: _config.AuthCode,
 		}
 	})
 	return _service
@@ -124,6 +125,7 @@ type AuthConfig struct {
 	TokenIssuer      			string        	`json:"token_issuer" validate:"required,gte=1"`
 	RefreshTokenExpiresTime 	time.Duration 	`json:"refresh_token_expires_time" validate:"required,gte=1"`
 	AccessTokenExpiresTime 		time.Duration 	`json:"access_token_expires_time" validate:"required,gte=1"`
+	AuthCode 					string			`json:"auth_code" validate:"required,gte=1"`
 }
 
 var (
@@ -163,15 +165,30 @@ const (
 	status_code_auth_shouldnot_refresh 	  = 809
 )
 
-const (
-	status_msg_auth_code_wrong           = "auth code 验证失败"
-	status_msg_auth_token_empyt          = "Token为空，如未登录，请先登录"
-	status_msg_auth_token_checkfaild     = "Token校验失败"
-	status_msg_auth_token_timeout        = "Token已过期"
-	status_msg_auth_token_generatefailed = "Token生成失败"
-	status_msg_auth_token_savefailed	 = "Token持久化失败"
-	status_msg_auth_token_typewrong      = "Token校验类型错误"
-	status_msg_auth_token_otherlogin     = "您的账户已在其他设备登录，请注意账户安全"
-	status_msg_auth_token_shouldrefresh  = "access token should refresh"
-	status_msg_auth_shouldnot_refresh	 = "access token should not refresh"
-)
+func init() {
+	requisition.SetMsgMap(requisition.LangeageZh, map[int]string{
+		status_code_auth_code_wrong           : "auth code 验证失败",
+		status_code_auth_token_empyt          : "token为空，如未登录，请先登录",
+		status_code_auth_token_checkfaild     : "token校验失败",
+		status_code_auth_token_timeout        : "token已过期",
+		status_code_auth_token_generatefailed : "token生成失败",
+		status_code_auth_token_savefailed 	  : "token持久化失败",
+		status_code_auth_token_typewrong      : "token校验类型错误",
+		status_code_auth_token_otherlogin     : "您的账户已在其他设备登录，请注意账户安全",
+		status_code_auth_token_shouldrefresh  : "access token should refresh",
+		status_code_auth_shouldnot_refresh 	  : "access token should not refresh",
+	})
+
+	requisition.SetMsgMap(requisition.LangeageZh, map[int]string{
+		status_code_auth_code_wrong           : "auth code verify failed",
+		status_code_auth_token_empyt          : "token empty，please to login",
+		status_code_auth_token_checkfaild     : "token verify failed",
+		status_code_auth_token_timeout        : "token expires time",
+		status_code_auth_token_generatefailed : "token generate failed",
+		status_code_auth_token_savefailed 	  : "token save failed",
+		status_code_auth_token_typewrong      : "token validate type error",
+		status_code_auth_token_otherlogin     : "the account has login in other device, please make sure account safe",
+		status_code_auth_token_shouldrefresh  : "access token should refresh",
+		status_code_auth_shouldnot_refresh 	  : "access token should not refresh",
+	})
+}

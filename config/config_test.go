@@ -1,7 +1,9 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"testing"
 )
 
@@ -12,16 +14,54 @@ func TestSecret(t *testing.T) {
 	fmt.Printf("long of bytes : %d\n", len(bts))
 }
 
-func TestConfig(t *testing.T) {
-	var cmdParams = &CmdParams{
+func TestLoadJson(t *testing.T) {
+	jsonBytes, err := ioutil.ReadFile("./config.json")
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println(string(jsonBytes))
+	var appConfig = new(AppConfig)
+	if err := json.Unmarshal(jsonBytes, appConfig); err != nil {
+		t.Error(err)
+	} else {
+		fmt.Println(appConfig)
+	}
+}
+
+func TestConfigLoadFromLocal(t *testing.T) {
+	Setup(module, salt, "./config.json", "", func(appConfig *AppConfig) {
+		fmt.Println(appConfig)
+	})
+}
+
+func TestConfigLoadFromLocalAndEtcdPut(t *testing.T) {
+	var cmdParams = CmdParams{
 		EtcdEndPoints:      []string{"127.0.0.1:2379"},
 		EtcdConfigPath:     "/sean-tech/webkit/config",
 		EtcdConfigUserName: "root",
 		EtcdConfigPassword: "etcd.user.root.pwd",
 	}
-	Setup("test", "salt", nil, cmdParams, func(appConfig *AppConfig) {
-		put(t)
-		if err := PutConfig(cfg, "test", salt); err != nil {
+	var config_etcd_info = CmdEncrypt(cmdParams, module, salt)
+	Setup(module, salt, "./config.json", config_etcd_info, func(appConfig *AppConfig) {
+		fmt.Println(appConfig)
+		if err := PutConfig(appConfig, "test", salt); err != nil {
+			t.Error(err)
+		}
+		fmt.Println("put success")
+	})
+}
+
+func TestConfig(t *testing.T) {
+	put(t)
+	var cmdParams = CmdParams{
+		EtcdEndPoints:      []string{"127.0.0.1:2379"},
+		EtcdConfigPath:     "/sean-tech/webkit/config",
+		EtcdConfigUserName: "root",
+		EtcdConfigPassword: "etcd.user.root.pwd",
+	}
+	var config_etcd_info = CmdEncrypt(cmdParams, module, salt)
+	Setup(module, salt, "", config_etcd_info, func(appConfig *AppConfig) {
+		if err := PutConfig(appConfig, "test", salt); err != nil {
 			t.Error(err)
 		}
 		fmt.Println("put success")
@@ -30,19 +70,25 @@ func TestConfig(t *testing.T) {
 		} else {
 			fmt.Println(modules)
 		}
+		get(t)
+		delete(t)
 		//get(t)
-		//delete(t)
-		////get(t)
-		//putWorkerId(t)
-		//getWorkerId(t)
-		//getAllWorkers(t)
-		//deleteWorkerId(t)
-		//getAllWorkers(t)
+		putWorkerId(t)
+		getWorkerId(t)
+		getAllWorkers(t)
+		deleteWorkerId(t)
+		getAllWorkers(t)
 	})
 }
 
 func put(t *testing.T) {
-	if err := PutConfig(cfg, module, salt); err != nil {
+	clientInit(&CmdParams{
+		EtcdEndPoints:      []string{"127.0.0.1:2379"},
+		EtcdConfigPath:     "/sean-tech/webkit/config",
+		EtcdConfigUserName: "root",
+		EtcdConfigPassword: "etcd.user.root.pwd",
+	})
+	if err := PutConfig(testconfig, module, salt); err != nil {
 		t.Error(err)
 	}
 	fmt.Println("put success")
@@ -92,4 +138,12 @@ func getAllWorkers(t *testing.T) {
 	} else {
 		fmt.Println("all workers get success : ", workers)
 	}
+}
+
+func TestJsonConvert(t *testing.T) {
+	jsonBytes, err := json.Marshal(testconfig)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println(string(jsonBytes))
 }

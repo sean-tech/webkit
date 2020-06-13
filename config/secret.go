@@ -19,7 +19,7 @@ type CmdParams struct {
 
 var _params *CmdParams
 
-func CmdEncrypt(params CmdParams, module, ip, salt string) string {
+func CmdEncrypt(params CmdParams, module, salt string) string {
 	var err error
 	if err = validate.ValidateParameter(params); err != nil {
 		panic(err)
@@ -29,8 +29,8 @@ func CmdEncrypt(params CmdParams, module, ip, salt string) string {
 		panic(err)
 	}
 
-	var originkey = fmt.Sprintf("%s/%s@%s", module, ip, salt)
-	md5Value := encrypt.GetMd5().Encrypt([]byte(originkey))
+	var originkey = fmt.Sprintf("%s@%s", module, salt)
+	md5Value := encrypt.GetMd5().Encode([]byte(originkey))
 	//fmt.Println(md5Value)
 	key := generateKey([]byte(md5Value))
 
@@ -45,35 +45,25 @@ func CmdEncrypt(params CmdParams, module, ip, salt string) string {
 
 func cmdDecrypt(secret string, module, salt string) *CmdParams {
 	var params = &CmdParams{}
-
-	var ips []string
-	if ips = GetLocalIP(); ips == nil {
-		panic("local ip got failed")
-	}
-	//fmt.Printf("%+v", ips)
-
+	// encrypt parse
 	var encryptData []byte
 	var err error
 	if encryptData, err = base64.StdEncoding.DecodeString(secret); err != nil {
 		panic(err)
 	}
+	// decrypt
 	var decryptData []byte
-	for _, ip := range ips {
-		var originkey = fmt.Sprintf("%s/%s@%s", module, ip, salt)
-		md5Value := encrypt.GetMd5().Encrypt([]byte(originkey))
-		//fmt.Println(md5Value)
-		key := generateKey([]byte(md5Value))
-		if decryptData, err = encrypt.GetAes().DecryptCBC(encryptData, key); decryptData == nil || err != nil {
-			continue
-		}
-		if err := json.Unmarshal(decryptData, params); err == nil {
-			break
-		}
+	var originkey = fmt.Sprintf("%s@%s", module, salt)
+	md5Value := encrypt.GetMd5().Encode([]byte(originkey))
+	//fmt.Println(md5Value)
+	key := generateKey([]byte(md5Value))
+	if decryptData, err = encrypt.GetAes().DecryptCBC(encryptData, key); decryptData == nil || err != nil {
+		panic(err)
 	}
-	if params == nil {
-		panic("decrypt failed")
+	if err := json.Unmarshal(decryptData, params); err != nil {
+		panic(err)
 	}
-	//fmt.Println(params)
+
 	return params
 }
 
@@ -88,7 +78,7 @@ func configEncrypt(cfg *AppConfig, module, salt string) (string, error) {
 	}
 
 	var originkey = fmt.Sprintf("%s/%s@%s", _params.EtcdConfigPath, module, salt)
-	md5Value := encrypt.GetMd5().Encrypt([]byte(originkey))
+	md5Value := encrypt.GetMd5().Encode([]byte(originkey))
 	//fmt.Println(md5Value)
 	key := generateKey([]byte(md5Value))
 
@@ -113,7 +103,7 @@ func ConfigDecrypt(secret string, module, salt string) (cfg *AppConfig, err erro
 
 	var decryptData []byte
 	var originkey = fmt.Sprintf("%s/%s@%s", _params.EtcdConfigPath, module, salt)
-	md5Value := encrypt.GetMd5().Encrypt([]byte(originkey))
+	md5Value := encrypt.GetMd5().Encode([]byte(originkey))
 	//fmt.Println(md5Value)
 	key := generateKey([]byte(md5Value))
 	if decryptData, err = encrypt.GetAes().DecryptCBC(encryptData, key); decryptData == nil || err != nil {

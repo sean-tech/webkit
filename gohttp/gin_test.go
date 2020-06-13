@@ -7,7 +7,8 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/sean-tech/gokit/foundation"
-	"github.com/sean-tech/gokit/logging"
+	"github.com/sean-tech/gokit/requisition"
+	"github.com/sean-tech/webkit/logging"
 	"github.com/sean-tech/gokit/validate"
 	"io/ioutil"
 	"net/http"
@@ -36,7 +37,7 @@ type GoodsPayParameter struct {
 
 func TestGinServer(t *testing.T) {
 	logging.Setup(logging.LogConfig{
-		LogSavePath:     "/Users/lyra/Desktop/",
+		LogSavePath:     "/Users/sean/Desktop/",
 		LogPrefix:       "gintest",
 	})
 	// server start
@@ -80,7 +81,7 @@ func bindtest(ctx *gin.Context)  {
 func GoodsPay(ctx context.Context, parameter *GoodsPayParameter, payMoney *float64) error {
 	err := validate.ValidateParameter(parameter)
 	if err != nil {
-		return foundation.NewError(STATUS_CODE_INVALID_PARAMS, err.Error())
+		return foundation.NewError(err, STATUS_CODE_INVALID_PARAMS, err.Error())
 	}
 	*payMoney = 10.0
 	return nil
@@ -127,5 +128,20 @@ func TestPostToGinServer(t *testing.T)  {
 		fmt.Println(string(body))
 		fmt.Println(statuscode)
 		fmt.Println(hea)
+	}
+}
+
+func TestRequestion(t *testing.T) {
+	ctx := &gin.Context{}
+	g := Gin{ctx}
+	newGinRequestion(ctx)
+	g.getGinRequisition().Language = requisition.LangeageZh
+	fmt.Println(g.getGinRequisition().Language)
+	var err error = requisition.NewError(nil,STATUS_CODE_PERMISSION_DENIED)
+	if e, ok := err.(requisition.IError); ok {
+		e.SetLang(g.getGinRequisition().Language)
+	}
+	if e, ok := err.(foundation.IError); ok {
+		fmt.Println(e.Code(), e.Msg(), e.Error())
 	}
 }

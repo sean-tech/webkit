@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"github.com/gin-gonic/gin"
 	"github.com/sean-tech/gokit/encrypt"
-	"github.com/sean-tech/gokit/foundation"
+	"github.com/sean-tech/gokit/requisition"
 	"github.com/sean-tech/gokit/validate"
 	"log"
 	"sync"
@@ -54,9 +54,10 @@ func (this *secretManagerImpl) InterceptRsa(rsa *RsaConfig) gin.HandlerFunc {
 	}
 	return func(ctx *gin.Context) {
 		g := Gin{ctx}
-		g.getRequisition().Rsa = rsa
+		g.getGinRequisition().Rsa = rsa
 
-		var code StatusCode = STATUS_CODE_SUCCESS
+
+		var code = STATUS_CODE_SUCCESS
 		var params SecretParams
 		var encrypted []byte
 		var jsonBytes []byte
@@ -77,12 +78,12 @@ func (this *secretManagerImpl) InterceptRsa(rsa *RsaConfig) gin.HandlerFunc {
 		}
 		// code check
 		if code != STATUS_CODE_SUCCESS {
-			g.Response(code, code.Msg(),nil, "")
+			g.ResponseError(requisition.NewError(nil, code))
 			ctx.Abort()
 			return
 		}
-		g.getRequisition().SecretMethod = secret_method_rsa
-		g.getRequisition().Params = jsonBytes
+		g.getGinRequisition().SecretMethod = secret_method_rsa
+		g.getGinRequisition().Params = jsonBytes
 		// next
 		ctx.Next()
 	}
@@ -99,10 +100,10 @@ func (this *secretManagerImpl) InterceptToken(tokenParse TokenParseFunc) gin.Han
 			ctx.Abort()
 			return
 		} else {
-			foundation.GetRequisition(ctx).UserId = userId
-			foundation.GetRequisition(ctx).RoleId = roleId
-			foundation.GetRequisition(ctx).UserName = userName
-			g.getRequisition().Key, _ = hex.DecodeString(key)
+			requisition.GetRequisition(ctx).UserId = userId
+			requisition.GetRequisition(ctx).RoleId = roleId
+			requisition.GetRequisition(ctx).UserName = userName
+			g.getGinRequisition().Key, _ = hex.DecodeString(key)
 			// next
 			ctx.Next()
 		}
@@ -115,7 +116,7 @@ func (this *secretManagerImpl) InterceptToken(tokenParse TokenParseFunc) gin.Han
 func (this *secretManagerImpl) InterceptAes() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		g := Gin{ctx}
-		var code StatusCode = STATUS_CODE_SUCCESS
+		var code = STATUS_CODE_SUCCESS
 		var params SecretParams
 		var encrypted []byte
 		var jsonBytes []byte
@@ -127,18 +128,18 @@ func (this *secretManagerImpl) InterceptAes() gin.HandlerFunc {
 			code = STATUS_CODE_INVALID_PARAMS
 		} else if encrypted, err = base64.StdEncoding.DecodeString(params.Secret); err != nil { // decode
 			code = STATUS_CODE_SECRET_CHECK_FAILED
-		} else if jsonBytes, err = encrypt.GetAes().DecryptCBC(encrypted, g.getRequisition().Key); err != nil { // decrypt
+		} else if jsonBytes, err = encrypt.GetAes().DecryptCBC(encrypted, g.getGinRequisition().Key); err != nil { // decrypt
 			code = STATUS_CODE_SECRET_CHECK_FAILED
 		}
 		// code check
 		if code != STATUS_CODE_SUCCESS {
-			g.Response(code, code.Msg(),nil, "")
+			g.ResponseError(requisition.NewError(nil, code))
 			ctx.Abort()
 			return
 		}
 
-		g.getRequisition().SecretMethod = secret_method_aes
-		g.getRequisition().Params = jsonBytes
+		g.getGinRequisition().SecretMethod = secret_method_aes
+		g.getGinRequisition().Params = jsonBytes
 		// next
 		ctx.Next()
 	}

@@ -9,20 +9,20 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/sean-tech/gokit/encrypt"
-	"github.com/sean-tech/gokit/logging"
+	"github.com/sean-tech/gokit/foundation"
 	"github.com/sean-tech/gokit/validate"
 	"github.com/sean-tech/webkit/auth"
 	"github.com/sean-tech/webkit/config"
 	"github.com/sean-tech/webkit/database"
 	"github.com/sean-tech/webkit/gohttp"
 	"github.com/sean-tech/webkit/gorpc"
+	"github.com/sean-tech/webkit/logging"
 	"github.com/smallnest/rpcx/server"
 	"io/ioutil"
 	"net/http"
 	"runtime"
 	"sync"
 	"testing"
-	"time"
 )
 
 const SERVICE_USER = "User"
@@ -191,59 +191,13 @@ func (this *userDaoImpl) UserGetByUserId(userId uint64) (user *User, err error) 
 
 
 
-var debugConfig = &config.AppConfig{
-	RsaOpen: false,
-	Rsa:     nil,
-	Http:    &gohttp.HttpConfig{
-		RunMode:      "debug",
-		WorkerId:     3,
-		HttpPort:     9022,
-		ReadTimeout:  60 * time.Second,
-		WriteTimeout: 60 * time.Second,
-	},
-	Rpc:     &gorpc.RpcConfig{
-		RunMode:              "debug",
-		RpcPort:              9021,
-		RpcPerSecondConnIdle: 500,
-		ReadTimeout:          60 * time.Second,
-		WriteTimeout:         60 * time.Second,
-		TokenSecret:          "th!@#isasd",
-		TokenIssuer:          "/sean-tech/webkit/auth",
-		TlsOpen:              false,
-		Tls:                  nil,
-		WhiteListOpen:        false,
-		WhiteListIps:         nil,
-		EtcdEndPoints:        []string{"127.0.0.1:2379"},
-		EtcdRpcBasePath:      "/sean-tech/webkit/auth/rpc",
-		EtcdRpcUserName:      "root",
-		EtcdRpcPassword:      "etcd.user.root.pwd",
-	},
-	Mysql:   nil,
-	Redis:   &database.RedisConfig{
-		Host:        "127.0.0.1:6379",
-		Password:    "",
-		MaxIdle:     30,
-		MaxActive:   30,
-		IdleTimeout: 200 * time.Second,
-	},
-}
-
-var cmdParams = &config.CmdParams{
-	EtcdEndPoints:      []string{"127.0.0.1:2379"},
-	EtcdConfigPath:     "/sean-tech/webkit/config",
-	EtcdConfigUserName: "root",
-	EtcdConfigPassword: "etcd.user.root.pwd",
-}
-
 func TestUserServer(t *testing.T) {
-	logging.Setup(logging.LogConfig{
-		LogSavePath: "/Users/sean/Desktop/",
-		LogPrefix:   "user",
-	})
 	// concurrent
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	// config
-	config.Setup("user", "asdzxczcq", debugConfig, cmdParams, func(appConfig *config.AppConfig) {
+	config.Setup("user", "asdzxczcq", "./webkit_config.json", "", func(appConfig *config.AppConfig) {
+		// log start
+		logging.Setup(*appConfig.Log)
 		// database start
 		database.SetupRedis(*appConfig.Redis).Open()
 		// service start
@@ -294,7 +248,7 @@ func TestClientUserCall(t *testing.T) {
 	var url = "http://localhost:9022/api/v1/user/login"
 	var parameter = map[string]interface{}{
 		"username" : "sean",
-		"password" : encrypt.GetMd5().Encrypt([]byte("sean.pwd123")),
+		"password" : encrypt.GetMd5().Encode([]byte("sean.pwd123")),
 	}
 	jsonStr, err := json.Marshal(parameter)
 	if err != nil {
@@ -378,4 +332,9 @@ func post(url string, jsonStr []byte, token string) (response map[string]interfa
 		return nil, err
 	}
 	return response, nil
+}
+
+func TestErrshow(t *testing.T) {
+	err := foundation.NewError(nil, 1, "haha")
+	fmt.Println(err.Error())
 }

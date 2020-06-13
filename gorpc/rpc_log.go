@@ -2,15 +2,17 @@ package gorpc
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/sean-tech/gokit/foundation"
+	"github.com/sean-tech/gokit/requisition"
 	"github.com/smallnest/rpcx/log"
 	"github.com/smallnest/rpcx/protocol"
 	"github.com/smallnest/rpcx/share"
 	"net"
 	"reflect"
 	"sync"
+	"time"
 	"unicode"
 	"unicode/utf8"
 )
@@ -26,25 +28,39 @@ func (this *clientLogger) DoPreCall(ctx context.Context, servicePath, serviceMet
 func (this *clientLogger) DoPostCall(ctx context.Context, servicePath, serviceMethod string, args interface{}, reply interface{}, err error) error {
 	var request_id uint64 = 0
 	var user_name string = ""
-	if requisition := foundation.GetRequisition(ctx); requisition != nil {
-		request_id = requisition.RequestId
-		user_name = requisition.UserName
+	if req := requisition.GetRequisition(ctx); req != nil {
+		request_id = req.RequestId
+		user_name = req.UserName
+	}
+
+	var argsInfo string = ""; var replyInfo string = ""
+	if argsBytes, err := json.Marshal(args); err == nil {
+		argsInfo = string(argsBytes)
+	} else {
+		argsInfo = fmt.Sprintf("%+v", args)
+	}
+	if replyBytes, err := json.Marshal(reply); err == nil {
+		replyInfo = string(replyBytes)
+	} else {
+		replyInfo = fmt.Sprintf("%+v", reply)
 	}
 
 	if err != nil {
 		if _logger != nil {
-			_logger.Errorf("[RPCX] DoPostCall request_id:%d user_name:%s service_call:%s.%s args:%+v reply:%+v error:%s",
-				request_id, user_name, servicePath, serviceMethod, args, reply, err.Error())
+			timeStr := time.Now().Format("2006/01/02 15:04:05")
+			_logger.Errorf("[RPCX]%s method:DoPostCall request_id:%d user_name:%s service_call:%s.%s args:%s reply:%s error:%s",
+				timeStr, request_id, user_name, servicePath, serviceMethod, argsInfo, replyInfo, err.Error())
 		}
 		return nil
 	}
 
-	var info = fmt.Sprintf("[RPCX] DoPostCall request_id:%d user_name:%s service_call:%s.%s args:%+v reply:%+v",
-		request_id, user_name, servicePath, serviceMethod, args, reply)
+	var info = fmt.Sprintf("method:DoPostCall requestid:%d username:%s servicecall:%s.%s args:%s reply:%s",
+		request_id, user_name, servicePath, serviceMethod, argsInfo, replyInfo)
 	if logger, ok := _logger.(IRpcxLogger); ok {
 		logger.Rpcx(info)
 	} else if _logger != nil {
-		_logger.Infof("[RPCX] %s", info)
+		timeStr := time.Now().Format("2006/01/02 15:04:05")
+		_logger.Infof("[RPCX]%s %s", timeStr, info)
 	}
 	return nil
 }
@@ -121,26 +137,28 @@ func (this *serverlogger) PostWriteRequest(ctx context.Context, r *protocol.Mess
 func (this *serverlogger) logPrint(prefix string, ctx context.Context, msg *protocol.Message, msgType MsgType, e error)  {
 	var request_id uint64 = 0
 	var user_name string = ""
-	if requisition := foundation.GetRequisition(ctx); requisition != nil {
-		request_id = requisition.RequestId
-		user_name = requisition.UserName
+	if req := requisition.GetRequisition(ctx); req != nil {
+		request_id = req.RequestId
+		user_name = req.UserName
 	}
 
 	if e != nil {
 		if _logger != nil {
-			_logger.Errorf("[RPCX] %s request_id:%d user_name:%s service_call:%s.%s error:%s",
-				prefix, request_id, user_name, msg.ServicePath, msg.ServiceMethod, e.Error())
+			timeStr := time.Now().Format("2006/01/02 15:04:05")
+			_logger.Errorf("[RPCX]%s method:%s requestid:%d username:%s servicecall:%s.%s error:%s",
+				timeStr, prefix, request_id, user_name, msg.ServicePath, msg.ServiceMethod, e.Error())
 		}
 		return
 	}
 
 	data := this.paylodConvert(ctx, msg, msgType)
-	var info = fmt.Sprintf("%s request_id:%d user_name:%s service_call:%s.%s metadata:%s payload:%+v",
+	var info = fmt.Sprintf("method:%s requestid:%d username:%s servicecall:%s.%s metadata:%s payload:%+v",
 		prefix, request_id, user_name, msg.ServicePath, msg.ServiceMethod, msg.Metadata, data)
 	if logger, ok := _logger.(IRpcxLogger); ok {
 		logger.Rpcx(info)
 	} else if _logger != nil {
-		_logger.Infof("[RPCX] %s\n", info)
+		timeStr := time.Now().Format("2006/01/02 15:04:05")
+		_logger.Infof("[RPCX]%s %s\n", timeStr, info)
 	}
 }
 

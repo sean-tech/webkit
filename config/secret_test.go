@@ -19,8 +19,7 @@ func TestEnc(t *testing.T) {
 	}
 	module := "user"
 	salt := "Ammzijhwekn!l@20k35"
-	ip := "192.168.1.20"
-	secret := CmdEncrypt(params, module, ip, salt)
+	secret := CmdEncrypt(params, module, salt)
 	p := cmdDecrypt(secret, module, salt)
 	fmt.Println(p)
 }
@@ -34,7 +33,7 @@ func TestConfigEnc(t *testing.T) {
 	}
 	module := "user"
 	salt := "Ammzijhwekn!l@20k35"
-	secret, err := configEncrypt(cfg, module, salt)
+	secret, err := configEncrypt(testconfig, module, salt)
 	if err != nil {
 		t.Error(err)
 	}

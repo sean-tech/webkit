@@ -1,0 +1,55 @@
+{
+  "log": {
+    "run_mode": "debug",
+    "log_save_path": "/Users/sean/Desktop/",
+    "log_prefix": "auth"
+  },
+  "rsa_open":false,
+  "rsa":null,
+  "http":{
+    "run_mode":"debug",
+    "worker_id":3,
+    "http_port":9012,
+    "read_timeout":60000000000,
+    "write_timeout":60000000000,
+    "cors_allow":false,
+    "cors_allow_origins":null
+  },
+  "rpc":{
+    "run_mode":"debug",
+    "rpc_port":9011,
+    "rpc_per_second_conn_idle":500,
+    "read_timeout":60000000000,
+    "write_timeout":60000000000,
+    "token_secret":"th!@#isasd",
+    "token_issuer":"/sean-tech/webkit/auth",
+    "tls_open":false,
+    "tls":null,
+    "white_list_open":false,
+    "white_list_ips":null,
+    "etcd_end_points":["127.0.0.1:2379"],
+    "etcd_rpc_base_path":"/sean-tech/webkit/rpc",
+    "etcd_rpc_username":"root",
+    "etcd_rpc_password":"etcd.user.root.pwd"
+  },
+  "mysql":{
+    "worker_id":3,
+    "type":"mysql",
+    "user":"root",
+    "password":"admin2018",
+    "hosts":{
+      "0":"127.0.0.1:3306"
+    },
+    "name":"etcd_center",
+    "max_idle":30,
+    "max_open":30,
+    "max_lifetime":200000000000
+  },
+  "redis":{
+    "host":"127.0.0.1:6379",
+    "password":"",
+    "max_idle":30,
+    "max_active":30,
+    "idle_timeout":200000000000
+  }
+}

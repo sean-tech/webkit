@@ -83,7 +83,7 @@ func mysqlTestStart() {
 
 var (
 	username = "zhagnsan"
-	password = encrypt.GetMd5().Encrypt([]byte("123456"))
+	password = encrypt.GetMd5().Encode([]byte("123456"))
 	userId = 99349769469558784
 )
 
@@ -172,7 +172,7 @@ func (this *userDaoImpl) userAdd(userName, password string) (*User, error) {
 		return nil, err
 	}
 	if exist {
-		return nil, foundation.NewError(error_code_user_exist, error_msg_user_exist)
+		return nil, foundation.NewError(err, error_code_user_exist, error_msg_user_exist)
 	}
 	// userId generate
 	userId := idWorker.GetId()
@@ -204,11 +204,11 @@ func (this *userDaoImpl) userGetByUserNameAndPassword(userName, password string)
 		return nil, err
 	}
 	if len(users) != 1 {
-		return nil, foundation.NewError(error_code_notfilter_username_password, error_msg_notfilter_username_password)
+		return nil, foundation.NewError(err, error_code_notfilter_username_password, error_msg_notfilter_username_password)
 	}
 	user := users[0]
 	if user.Enabled == 0 {
-		return nil, foundation.NewError(error_code_user_disenabled, error_msg_user_disenabled)
+		return nil, foundation.NewError(err, error_code_user_disenabled, error_msg_user_disenabled)
 	}
 	return user, nil
 }
@@ -229,7 +229,7 @@ func (this *userDaoImpl) userGetById(userId int, userName string) (*User, error)
 		return nil, err
 	}
 	if len(users) == 0 {
-		return nil, foundation.NewError(error_code_user_not_exist, error_msg_user_not_exist)
+		return nil, foundation.NewError(err, error_code_user_not_exist, error_msg_user_not_exist)
 	}
 	user := users[0]
 	return user, nil
@@ -268,7 +268,7 @@ func (this *userDaoImpl) userUpdate(userId int, userName, password, aliasName st
 		return err
 	}
 	if row == 0 {
-		return foundation.NewError(error_code_update_failed, error_msg_update_failed)
+		return foundation.NewError(err, error_code_update_failed, error_msg_update_failed)
 	}
 	return nil
 }
@@ -288,7 +288,7 @@ func (this *userDaoImpl) userDelete(userId int, userName string) error {
 		return err
 	}
 	if !exist {
-		return foundation.NewError(error_code_user_not_exist, error_msg_user_not_exist)
+		return foundation.NewError(err, error_code_user_not_exist, error_msg_user_not_exist)
 	}
 	// user delete update
 	res, err := db.Exec(sql_user_delete_by_id, idWorker.GetProjTimeStamp(), userId)
@@ -300,7 +300,7 @@ func (this *userDaoImpl) userDelete(userId int, userName string) error {
 		return err
 	}
 	if row == 0 {
-		return foundation.NewError(error_code_delete_failed, error_msg_delete_failed)
+		return foundation.NewError(err, error_code_delete_failed, error_msg_delete_failed)
 	}
 	return nil
 }
@@ -317,7 +317,7 @@ func (this *userDaoImpl) userEnabled(userId int, userName string, enabled bool) 
 		return err
 	}
 	if !exist {
-		return foundation.NewError(error_code_user_not_exist, error_msg_user_not_exist)
+		return foundation.NewError(err, error_code_user_not_exist, error_msg_user_not_exist)
 	}
 	// user enable update
 	var sql string; var code int; var msg string
@@ -339,7 +339,7 @@ func (this *userDaoImpl) userEnabled(userId int, userName string, enabled bool) 
 		return err
 	}
 	if row == 0 {
-		return foundation.NewError(code, msg)
+		return foundation.NewError(err, code, msg)
 	}
 	return nil
 }

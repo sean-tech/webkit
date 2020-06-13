@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/sean-tech/gokit/encrypt"
-	"github.com/sean-tech/gokit/foundation"
+	"github.com/sean-tech/gokit/requisition"
 	"strconv"
 	"time"
 )
@@ -18,7 +18,7 @@ type serviceImpl struct {
 
 func (this *serviceImpl) NewAuth(ctx context.Context, parameter *NewAuthParameter, result *AuthResult) error {
 	if parameter.AuthCode != this.authCode {
-		return foundation.NewError(status_code_auth_code_wrong, status_msg_auth_code_wrong)
+		return requisition.NewError(nil, status_code_auth_code_wrong)
 	}
 
 	// refresh token
@@ -29,17 +29,17 @@ func (this *serviceImpl) NewAuth(ctx context.Context, parameter *NewAuthParamete
 	var key = hex.EncodeToString(encrypt.GetAes().GenerateKey())
 	refreshTokenItem.Key = key
 	if err := dao().SaveRefreshTokenItem(parameter.UserName, refreshTokenItem); err != nil {
-		return foundation.NewError(status_code_auth_token_savefailed, status_msg_auth_token_savefailed)
+		return requisition.NewError(err, status_code_auth_token_savefailed)
 	}
 
 	// access token
 	var accessTokenItem *TokenItem
 	if accessTokenItem, err = generateToken(parameter.UUID, parameter.Client, parameter.UserId, parameter.RoleId, parameter.UserName, refreshTokenItem.Id); err != nil {
-		return foundation.NewError(status_code_auth_token_generatefailed, status_msg_auth_token_generatefailed)
+		return requisition.NewError(err, status_code_auth_token_generatefailed)
 	}
 	accessTokenItem.Key = key
 	if err := dao().SaveAccessTokenItem(parameter.UserName, accessTokenItem); err != nil {
-		return foundation.NewError(status_code_auth_token_savefailed, status_msg_auth_token_savefailed)
+		return requisition.NewError(err, status_code_auth_token_savefailed)
 	}
 
 	// response
@@ -58,7 +58,7 @@ func (this *serviceImpl) AuthRefresh(ctx context.Context, parameter *AuthRefresh
 	}
 	var accessTokenItem = TokenItem{}; var err error
 	if err = this.AccessTokenAuth(ctx, accessTokenAuthParameter, &accessTokenItem); err == nil {
-		return foundation.NewError(status_code_auth_shouldnot_refresh, status_msg_auth_shouldnot_refresh)
+		return requisition.NewError(err, status_code_auth_shouldnot_refresh)
 	}
 	if e, ok := err.(interface{Code() int}); ok && e.Code() != status_code_auth_token_shouldrefresh {
 		return err
@@ -71,7 +71,7 @@ func (this *serviceImpl) AuthRefresh(ctx context.Context, parameter *AuthRefresh
 	}
 	if time.Now().Unix() > refreshTokenItem.ExpiresAt {
 		_ = dao().DeleteRefreshTokenItem(refreshTokenItem.UserName)
-		return foundation.NewError(status_code_auth_token_timeout, status_msg_auth_token_timeout)
+		return requisition.NewError(nil, status_code_auth_token_timeout)
 	}
 	var refreshTokenClaims *TokenClaims
 	if refreshTokenClaims, err = parseToken(refreshTokenItem.Token); err != nil {
@@ -81,9 +81,9 @@ func (this *serviceImpl) AuthRefresh(ctx context.Context, parameter *AuthRefresh
 	// signed id fit
 	if refreshTokenItem.Id != accessTokenItem.SignedId {
 		if accessTokenItem.UUID != refreshTokenItem.UUID { // sso : other device login
-			return foundation.NewError(status_code_auth_token_otherlogin, status_msg_auth_token_otherlogin)
+			return requisition.NewError(nil, status_code_auth_token_otherlogin)
 		}
-		return foundation.NewError(status_code_auth_token_checkfaild, status_msg_auth_token_checkfaild)
+		return requisition.NewError(nil, status_code_auth_token_checkfaild)
 	}
 
 	// new auth
@@ -110,9 +110,9 @@ func (this *serviceImpl) AccessTokenAuth(ctx context.Context, parameter *AccessT
 	}
 	if savedAccessTokenItem.Token != parameter.AccessToken {
 		if accessTokenClaims.UUID != savedAccessTokenItem.UUID {
-			return foundation.NewError(status_code_auth_token_otherlogin, status_msg_auth_token_otherlogin)
+			return requisition.NewError(err, status_code_auth_token_otherlogin)
 		}
-		return foundation.NewError(status_code_auth_token_checkfaild, status_msg_auth_token_checkfaild)
+		return requisition.NewError(err, status_code_auth_token_checkfaild)
 	}
 	*accessTokenItem = *savedAccessTokenItem
 	return nil
@@ -171,7 +171,7 @@ func generateToken(uuid string,  client string, userId, roleId uint64, userName 
  */
 func parseToken(token string) (*TokenClaims, error) {
 	if token == "" || len(token) == 0 {
-		return nil, foundation.NewError(status_code_auth_token_empyt, status_msg_auth_token_empyt)
+		return nil, requisition.NewError(nil, status_code_auth_token_empyt)
 	}
 
 	// parse token
@@ -181,19 +181,19 @@ func parseToken(token string) (*TokenClaims, error) {
 	if err != nil {
 		return nil, err
 	} else if tokenClaims == nil {
-		return nil, foundation.NewError(status_code_auth_token_checkfaild, status_msg_auth_token_checkfaild)
+		return nil, requisition.NewError(nil, status_code_auth_token_checkfaild)
 	} else if !tokenClaims.Valid {
-		return nil, foundation.NewError(status_code_auth_token_checkfaild, status_msg_auth_token_checkfaild)
+		return nil, requisition.NewError(nil, status_code_auth_token_checkfaild)
 	}
 
 	// token info validate
 	tokenInfo, ok := tokenClaims.Claims.(*TokenClaims)
 	if !ok {
-		return nil, foundation.NewError(status_code_auth_token_typewrong, status_msg_auth_token_typewrong)
+		return nil, requisition.NewError(nil, status_code_auth_token_typewrong)
 	} else if tokenInfo.Issuer != _config.TokenIssuer {
-		return nil, foundation.NewError(status_code_auth_token_checkfaild, status_msg_auth_token_checkfaild)
+		return nil, requisition.NewError(nil, status_code_auth_token_checkfaild)
 	} else if time.Now().Unix() > tokenInfo.ExpiresAt {
-		return nil, foundation.NewError(status_code_auth_token_shouldrefresh, status_msg_auth_token_shouldrefresh)
+		return nil, requisition.NewError(nil, status_code_auth_token_shouldrefresh)
 	}
 	return tokenInfo, nil
 }
