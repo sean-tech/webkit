@@ -79,7 +79,7 @@ func HttpServerServe(config HttpConfig, logger IGinLogger, registerFunc GinRegis
 	//engine.StaticFS(config.Upload.FileSavePath, http.Dir(GetUploadFilePath()))
 	engine.Use(func(ctx *gin.Context) {
 		var lang = ctx.GetHeader("Accept-Language")
-		if  lang == "" {
+		if  requisition.SupportLanguage(lang) == false {
 			lang = requisition.LanguageZh
 		}
 		newGinRequestion(ctx).Language = lang
@@ -249,6 +249,7 @@ func (g *Gin) ResponseError(err error) {
 	if e, ok := err.(foundation.IError); ok {
 		g.LogResponseError(e.Code(), e.Msg(), e.Error())
 		g.Response(e.Code(), e.Msg(), nil, "")
+		return
 	}
 	g.LogResponseError(STATUS_CODE_FAILED, err.Error(), "")
 	g.Response(STATUS_CODE_FAILED, err.Error(), nil, "")
