@@ -166,7 +166,7 @@ const (
 )
 
 func init() {
-	requisition.SetMsgMap(requisition.LangeageZh, map[int]string{
+	requisition.SetMsgMap(requisition.LanguageZh, map[int]string{
 		status_code_auth_code_wrong           : "auth code 验证失败",
 		status_code_auth_token_empyt          : "token为空，如未登录，请先登录",
 		status_code_auth_token_checkfaild     : "token校验失败",
@@ -179,7 +179,7 @@ func init() {
 		status_code_auth_shouldnot_refresh 	  : "access token should not refresh",
 	})
 
-	requisition.SetMsgMap(requisition.LangeageZh, map[int]string{
+	requisition.SetMsgMap(requisition.LanguageEn, map[int]string{
 		status_code_auth_code_wrong           : "auth code verify failed",
 		status_code_auth_token_empyt          : "token empty，please to login",
 		status_code_auth_token_checkfaild     : "token verify failed",
