@@ -80,7 +80,7 @@ func HttpServerServe(config HttpConfig, logger IGinLogger, registerFunc GinRegis
 	engine.Use(func(ctx *gin.Context) {
 		var lang = ctx.GetHeader("Accept-Language")
 		if  lang == "" {
-			lang = requisition.LangeageZh
+			lang = requisition.LanguageZh
 		}
 		newGinRequestion(ctx).Language = lang
 		var requestId = uint64(_idWorker.GetId())

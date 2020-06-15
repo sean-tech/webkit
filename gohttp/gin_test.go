@@ -135,7 +135,7 @@ func TestRequestion(t *testing.T) {
 	ctx := &gin.Context{}
 	g := Gin{ctx}
 	newGinRequestion(ctx)
-	g.getGinRequisition().Language = requisition.LangeageZh
+	g.getGinRequisition().Language = requisition.LanguageZh
 	fmt.Println(g.getGinRequisition().Language)
 	var err error = requisition.NewError(nil,STATUS_CODE_PERMISSION_DENIED)
 	if e, ok := err.(requisition.IError); ok {

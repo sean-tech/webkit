@@ -20,7 +20,7 @@ const (
 )
 
 func init() {
-	requisition.SetMsgMap(requisition.LangeageZh, map[int]string{
+	requisition.SetMsgMap(requisition.LanguageZh, map[int]string{
 		STATUS_CODE_SUCCESS : 						"操作成功",
 		STATUS_CODE_INVALID_PARAMS : 				"参数校验失败",
 		STATUS_CODE_ERROR : 						"系统错误",
