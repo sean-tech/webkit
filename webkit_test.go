@@ -195,7 +195,7 @@ func TestUserServer(t *testing.T) {
 	// concurrent
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	// config
-	config.Setup("user", "asdzxczcq", "./webkit_config.json", "", func(appConfig *config.AppConfig) {
+	config.Setup("user", "asdzxczcq", testconfig, "", func(appConfig *config.AppConfig) {
 		// log start
 		logging.Setup(*appConfig.Log)
 		// database start

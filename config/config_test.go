@@ -29,7 +29,7 @@ func TestLoadJson(t *testing.T) {
 }
 
 func TestConfigLoadFromLocal(t *testing.T) {
-	Setup(module, salt, "./config.json", "", func(appConfig *AppConfig) {
+	Setup(module, salt, testconfig, "", func(appConfig *AppConfig) {
 		fmt.Println(appConfig)
 	})
 }
@@ -42,7 +42,7 @@ func TestConfigLoadFromLocalAndEtcdPut(t *testing.T) {
 		EtcdConfigPassword: "etcd.user.root.pwd",
 	}
 	var config_etcd_info = CmdEncrypt(cmdParams, module, salt)
-	Setup(module, salt, "./config.json", config_etcd_info, func(appConfig *AppConfig) {
+	Setup(module, salt, testconfig, config_etcd_info, func(appConfig *AppConfig) {
 		fmt.Println(appConfig)
 		if err := PutConfig(appConfig, "test", salt); err != nil {
 			t.Error(err)
@@ -60,7 +60,7 @@ func TestConfig(t *testing.T) {
 		EtcdConfigPassword: "etcd.user.root.pwd",
 	}
 	var config_etcd_info = CmdEncrypt(cmdParams, module, salt)
-	Setup(module, salt, "", config_etcd_info, func(appConfig *AppConfig) {
+	Setup(module, salt, testconfig, config_etcd_info, func(appConfig *AppConfig) {
 		if err := PutConfig(appConfig, "test", salt); err != nil {
 			t.Error(err)
 		}

@@ -31,11 +31,63 @@ var authConfig = AuthConfig{
 	AuthCode: "this is auth code for validate",
 }
 
+var testconfig = &config.AppConfig{
+	Log: &logging.LogConfig{
+		RunMode:     "debug",
+		LogSavePath: "/Users/sean/Desktop/",
+		LogPrefix:   "auth",
+	},
+	RsaOpen: false,
+	Rsa:     nil,
+	Http:    &gohttp.HttpConfig{
+		RunMode:      "debug",
+		WorkerId:     3,
+		HttpPort:     9002,
+		ReadTimeout:  60 * time.Second,
+		WriteTimeout: 60 * time.Second,
+	},
+	Rpc:     &gorpc.RpcConfig{
+		RunMode:              "debug",
+		RpcPort:              9001,
+		RpcPerSecondConnIdle: 500,
+		ReadTimeout:          60 * time.Second,
+		WriteTimeout:         60 * time.Second,
+		TokenSecret:          "th!@#isasd",
+		TokenIssuer:          "/sean-tech/webkit/auth",
+		TlsOpen:              false,
+		Tls:                  nil,
+		WhiteListOpen:        false,
+		WhiteListIps:         nil,
+		EtcdEndPoints:        []string{"127.0.0.1:2379"},
+		EtcdRpcBasePath:      "/sean-tech/webkit/rpc",
+		EtcdRpcUserName:      "root",
+		EtcdRpcPassword:      "etcd.user.root.pwd",
+	},
+	Mysql:   &database.MysqlConfig{
+		WorkerId:    3,
+		Type:        "mysql",
+		User:        "root",
+		Password:    "admin2018",
+		Hosts: 		 map[int]string{0:"127.0.0.1:3306"},
+		Name:        "etcd_center",
+		MaxIdle:     30,
+		MaxOpen:     30,
+		MaxLifetime: 200 * time.Second,
+	},
+	Redis:   &database.RedisConfig{
+		Host:        "127.0.0.1:6379",
+		Password:    "",
+		MaxIdle:     30,
+		MaxActive:   30,
+		IdleTimeout: 200 * time.Second,
+	},
+}
+
 func TestAuthServer(t *testing.T) {
 	// concurrent
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	// config
-	config.Setup("auth", "adzxcqwrz", "../config/config.json", "", func(appConfig *config.AppConfig) {
+	config.Setup("auth", "adzxcqwrz", testconfig, "", func(appConfig *config.AppConfig) {
 		// log start
 		logging.Setup(*appConfig.Log)
 		// database start
@@ -65,7 +117,7 @@ func RegisterApi(engine *gin.Engine)  {
 }
 
 func TestNewAuth(t *testing.T) {
-	var url = "http://localhost:9012/api/v1/user/auth/new"
+	var url = "http://localhost:9002/api/v1/user/auth/new"
 	var parameter = map[string]interface{}{
 		"auth_code" : "this is auth code for validate",
 		"uuid" : "kasnzncuhbajdjabdjazxc12345asd",
@@ -84,7 +136,7 @@ func TestNewAuth(t *testing.T) {
 	if resp, err = post(url, jsonStr); err == nil {
 		resp, _ = resp["data"].(map[string]interface{})
 		fmt.Println("--------------access auth----------------")
-		url = "http://localhost:9012/api/v1/user/auth/accesstoken"
+		url = "http://localhost:9002/api/v1/user/auth/accesstoken"
 		parameter = map[string]interface{}{
 			"access_token" : resp["access_token"],
 		}
@@ -97,7 +149,7 @@ func TestNewAuth(t *testing.T) {
 
 		fmt.Println("--------------refresh----------------")
 
-		url = "http://localhost:9012/api/v1/user/auth/refresh"
+		url = "http://localhost:9002/api/v1/user/auth/refresh"
 		parameter = map[string]interface{}{
 			"refresh_token" : resp["refresh_token"],
 			"access_token" : resp["access_token"],

@@ -1,16 +1,14 @@
 package config
 
 import (
-	"encoding/json"
 	"errors"
 	"flag"
-	"github.com/sean-tech/gokit/fileutils"
 	"github.com/sean-tech/gokit/validate"
 	"github.com/sean-tech/webkit/database"
 	"github.com/sean-tech/webkit/gohttp"
 	"github.com/sean-tech/webkit/gorpc"
 	"github.com/sean-tech/webkit/logging"
-	"io/ioutil"
+	"os"
 )
 
 type AppConfig struct {
@@ -54,43 +52,42 @@ type ConfigLoad func(appConfig *AppConfig)
 
 /**
  * 初始化config
- * configFilePath, cmd:-configfilepath 通过local json 文件加载配置
+ * configFilePath, cmd:-debugconfig 通过local json 文件加载配置
  * configEtcdInfo, cmd:-configetcdinfo 通过etcd注册中心加载配置
  */
-func Setup(module, salt string, configFilePath string, configEtcdInfo string, load ConfigLoad) {
+func Setup(module, salt string, debugConfig *AppConfig, etcdConfig string, load ConfigLoad) {
 
 	// config file path
-	config_file_path_usage := "please use -configfilepath to pointing at local config file."
-	config_file_path := flag.String("configfilepath", configFilePath, config_file_path_usage)
+	debug_config_usage := "please use -debugconfig, ture or false to pointing at whether use local debug config."
+	debug_config_use := flag.Bool("debugconfig", true, debug_config_usage)
 	// etcdinfo
-	config_etcd_info_usage := "please use -configetcdinfo to pointing at etcd config info secreted."
-	config_etcd_info := flag.String("configetcdinfo", configEtcdInfo, config_etcd_info_usage)
+	etcd_config_usage := "please use -etcdconfig to pointing at etcd config info secreted."
+	etcd_config := flag.String("etcdconfig", etcdConfig, etcd_config_usage)
 	// parse
 	flag.Parse()
 
 	// when etcdinfo set, etcd client init
-	if config_etcd_info != nil && *config_etcd_info != "" {
-		params := cmdDecrypt(*config_etcd_info, module, salt)
+	if etcd_config != nil && *etcd_config != "" {
+		params := cmdDecrypt(*etcd_config, module, salt)
 		clientInit(params)
 	}
-
-	// load config from local json file
-	if config_file_path != nil && *config_file_path != "" && fileutils.CheckExist(*config_file_path) == true {
-		var appConfig = new(AppConfig)
-		if jsonBytes, err := ioutil.ReadFile(*config_file_path); err != nil {
-			panic(err)
-		} else if  err := json.Unmarshal(jsonBytes, appConfig); err != nil {
-			panic(err)
-		} else {
-			load(appConfig)
-			return
+	// load config from local debug config
+	if *debug_config_use == true {
+		if debugConfig == nil {
+			panic("debug config is nil when debugconfig used true")
 		}
+		if err := debugConfig.Validate(); err != nil {
+			panic("debug config validate error:" + err.Error())
+		}
+		os.Stdout.Write([]byte("config load success with debug config.\n"))
+		load(debugConfig)
+		return
 	}
-
-	// load config from etcd with etcd info
-	if config_etcd_info == nil  || *config_etcd_info == "" {
+	// load config from etcd
+	if etcd_config == nil  || *etcd_config == "" {
 		panic("please use -configfilepath or -configetcdinfo to pointing at config load method")
 	}
+	os.Stdout.Write([]byte("config load success with etcd config.\n"))
 	load(configLoad(module, salt))
 }
 
