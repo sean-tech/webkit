@@ -3,12 +3,17 @@ package config
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"github.com/sean-tech/gokit/validate"
 	"github.com/sean-tech/webkit/database"
 	"github.com/sean-tech/webkit/gohttp"
 	"github.com/sean-tech/webkit/gorpc"
 	"github.com/sean-tech/webkit/logging"
+	"log"
+	"net"
+	"net/rpc"
 	"os"
+	"strings"
 )
 
 type AppConfig struct {
@@ -51,67 +56,136 @@ func (cfg *AppConfig) Validate() error {
 type ConfigLoad func(appConfig *AppConfig)
 
 /**
- * 初始化config
- * configFilePath, cmd:-debugconfig 通过local json 文件加载配置
- * configEtcdInfo, cmd:-configetcdinfo 通过etcd注册中心加载配置
- */
-func Setup(module, salt string, debugConfig *AppConfig, etcdConfig string, load ConfigLoad) {
+* command start * load config
+* module, 服务程序所属模块
+* testAddress, cmd:-ccaddress 测试cc rpc地址
+* debugConfig，本地debug配置，当未指定cc时默认加载debug配置
+*/
+func Setup(module string, testAddress string, debugConfig *AppConfig, load ConfigLoad) {
 
-	// config file path
-	debug_config_usage := "please use -debugconfig, ture or false to pointing at whether use local debug config."
-	debug_config_use := flag.Bool("debugconfig", true, debug_config_usage)
-	// etcdinfo
-	etcd_config_usage := "please use -etcdconfig to pointing at etcd config info secreted."
-	etcd_config := flag.String("etcdconfig", etcdConfig, etcd_config_usage)
-	// parse
+	ccaddress_usage := "please use -ccaddress to pointing at configcenter rpc address."
+	ccaddress := flag.String("ccaddress", testAddress, ccaddress_usage)
 	flag.Parse()
 
-	// when etcdinfo set, etcd client init
-	if etcd_config != nil && *etcd_config != "" {
-		params := cmdDecrypt(*etcd_config, module, salt)
-		clientInit(params)
-	}
-	// load config from local debug config
-	if *debug_config_use == true {
-		if debugConfig == nil {
-			panic("debug config is nil when debugconfig used true")
-		}
-		if err := debugConfig.Validate(); err != nil {
-			panic("debug config validate error:" + err.Error())
-		}
-		os.Stdout.Write([]byte("config load success with debug config.\n"))
-		load(debugConfig)
+	// when ccaddress set, load config from config center
+	if ccaddress != nil && *ccaddress != "" {
+		os.Stdout.Write([]byte("config load success from configcenter.\n"))
+		load(ConfigCenterLoading(*ccaddress, module))
 		return
 	}
-	// load config from etcd
-	if etcd_config == nil  || *etcd_config == "" {
-		panic("please use -configfilepath or -configetcdinfo to pointing at config load method")
+	// load config from local debug config
+	if debugConfig == nil {
+		panic(ccaddress_usage)
 	}
-	os.Stdout.Write([]byte("config load success with etcd config.\n"))
-	load(configLoad(module, salt))
+	if err := debugConfig.Validate(); err != nil {
+		panic("debug config validate error:" + err.Error())
+	}
+	os.Stdout.Write([]byte("config load success from local debugconfig.\n"))
+	load(debugConfig)
 }
 
-func configLoad(module, salt string) *AppConfig {
-	var ips []string
-	if ips = GetLocalIP(); ips == nil {
-		panic("local ip got failed")
+
+
+const ConfigCenterServiceName = "sean,tech/webkit/configcenter"
+const ConfigLoadMethodName = ".ConfigLoad"
+
+type IConfigCenter interface {
+	ConfigLoad(path string, config *AppConfig) error
+}
+
+func ConfigCernterServing(cc IConfigCenter, port int, whitelistips []string) {
+	rpc.RegisterName(ConfigCenterServiceName, cc)
+
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	if err != nil {
+		log.Fatal("ListenTCP error:", err)
 	}
-	var workerId int64 = -1
-	for _, ip := range ips {
-		var err error
-		if workerId, err = GetWorkerId(module, ip); err != nil {
-			continue
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			log.Fatal("Accept error:", err)
+		}
+		var clientIp = conn.RemoteAddr().String()
+		if ip, _, err := net.SplitHostPort(strings.TrimSpace(conn.RemoteAddr().String())); err == nil {
+			clientIp = ip
+		}
+		if WhiteListIpsFitter(clientIp, whitelistips) == true {
+			go rpc.ServeConn(conn)
+		} else {
+			conn.Close()
 		}
 	}
-	if workerId == -1 {
-		panic("load workerid failed")
+}
+
+func WhiteListIpsFitter(clientIp string, whitelistips []string) bool {
+	if whitelistips == nil {
+		return true
+	}
+	for _, ip := range whitelistips {
+		if clientIp == ip {
+			return true
+		}
+	}
+	return false
+}
+
+func ConfigCenterLoading(ccaddress, module string) *AppConfig {
+	client, err := rpc.Dial("tcp", ccaddress)
+	if err != nil {
+		log.Fatal("dialing:", err)
 	}
 
-	if appConfig, err := GetConfig(module, salt); err != nil {
-		panic(err)
-	} else {
-		appConfig.Http.WorkerId = workerId
-		appConfig.Mysql.WorkerId = workerId
-		return appConfig
+	var path = fmt.Sprintf("%s/%s", module, GetLocalIP())
+	var config = new(AppConfig)
+	err = client.Call(ConfigCenterServiceName+ConfigLoadMethodName, path, config)
+	if err != nil {
+		log.Fatal(err)
 	}
+	return config
 }
+
+
+func GetIPs() (ips []string){
+	addrs,err := net.InterfaceAddrs()
+	if err != nil{
+		//fmt.Println("get ip arr failed: ",err)
+		return nil
+	}
+	for _,addr := range addrs{
+		if ipnet,ok := addr.(*net.IPNet);ok && !ipnet.IP.IsLoopback(){
+			if ipnet.IP.To4() != nil{
+				ips = append(ips,ipnet.IP.String())
+			}
+		}
+	}
+	return ips
+}
+
+func GetLocalIP() string {
+	addrs,err := net.InterfaceAddrs()
+	if err != nil{
+		return ""
+	}
+	for _,addr := range addrs{
+		if ipnet,ok := addr.(*net.IPNet);ok && !ipnet.IP.IsLoopback(){
+			if isLocal(ipnet.IP.To4()) {
+				return ipnet.IP.String()
+			}
+		}
+	}
+	return ""
+}
+
+func isLocal(ip4 net.IP) bool {
+	if ip4 == nil {
+		return false
+	}
+	return ip4[0] == 10 || // 10.0.0.0/8
+		(ip4[0] == 172 && ip4[1] >= 16 && ip4[1] <= 31) || // 172.16.0.0/12
+		(ip4[0] == 169 && ip4[1] == 254) || // 169.254.0.0/16
+		(ip4[0] == 192 && ip4[1] == 168) // 192.168.0.0/16
+}
+
+
+
+
