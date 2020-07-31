@@ -87,7 +87,7 @@ func TestAuthServer(t *testing.T) {
 	// concurrent
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	// config
-	config.Setup("auth", "adzxcqwrz", testconfig, "", func(appConfig *config.AppConfig) {
+	config.Setup("auth", "", testconfig, func(appConfig *config.AppConfig) {
 		// log start
 		logging.Setup(*appConfig.Log)
 		// database start
