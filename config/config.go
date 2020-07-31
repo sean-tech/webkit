@@ -58,13 +58,13 @@ type ConfigLoad func(appConfig *AppConfig)
 /**
 * command start * load config
 * module, 服务程序所属模块
-* testAddress, cmd:-ccaddress 测试cc rpc地址
-* debugConfig，本地debug配置，当未指定cc时默认加载debug配置
+* ccAddress, cmd:-ccaddress 测试cc rpc地址
+* localConfig，本地配置，当未指定cc时默认加载
 */
-func Setup(module string, testAddress string, debugConfig *AppConfig, load ConfigLoad) {
+func Setup(module string, ccAddress string, localConfig *AppConfig, load ConfigLoad) {
 
 	ccaddress_usage := "please use -ccaddress to pointing at configcenter rpc address."
-	ccaddress := flag.String("ccaddress", testAddress, ccaddress_usage)
+	ccaddress := flag.String("ccaddress", ccAddress, ccaddress_usage)
 	flag.Parse()
 
 	// when ccaddress set, load config from config center
@@ -74,14 +74,14 @@ func Setup(module string, testAddress string, debugConfig *AppConfig, load Confi
 		return
 	}
 	// load config from local debug config
-	if debugConfig == nil {
+	if localConfig == nil {
 		panic(ccaddress_usage)
 	}
-	if err := debugConfig.Validate(); err != nil {
-		panic("debug config validate error:" + err.Error())
+	if err := localConfig.Validate(); err != nil {
+		panic("local config validate error:" + err.Error())
 	}
-	os.Stdout.Write([]byte("config load success from local debugconfig.\n"))
-	load(debugConfig)
+	os.Stdout.Write([]byte("config load success from local.\n"))
+	load(localConfig)
 }
 
 
