@@ -23,7 +23,7 @@ func (this *serviceImpl) NewAuth(ctx context.Context, parameter *NewAuthParamete
 
 	// refresh token
 	var refreshTokenItem *TokenItem; var err error
-	if refreshTokenItem, err = generateToken(parameter.UUID, parameter.Client, parameter.UserId, parameter.RoleId, parameter.UserName, ""); err != nil {
+	if refreshTokenItem, err = generateToken(parameter.UUID, parameter.Client, parameter.UserId, parameter.UserName, parameter.Role, ""); err != nil {
 		return err
 	}
 	var key = hex.EncodeToString(encrypt.GetAes().GenerateKey())
@@ -34,7 +34,7 @@ func (this *serviceImpl) NewAuth(ctx context.Context, parameter *NewAuthParamete
 
 	// access token
 	var accessTokenItem *TokenItem
-	if accessTokenItem, err = generateToken(parameter.UUID, parameter.Client, parameter.UserId, parameter.RoleId, parameter.UserName, refreshTokenItem.Id); err != nil {
+	if accessTokenItem, err = generateToken(parameter.UUID, parameter.Client, parameter.UserId, parameter.UserName, parameter.Role, refreshTokenItem.Id); err != nil {
 		return requisition.NewError(err, status_code_auth_token_generatefailed)
 	}
 	accessTokenItem.Key = key
@@ -92,6 +92,7 @@ func (this *serviceImpl) AuthRefresh(ctx context.Context, parameter *AuthRefresh
 		UUID:     refreshTokenItem.UUID,
 		UserId:   refreshTokenClaims.UserId,
 		UserName: refreshTokenItem.UserName,
+		Role: 	  refreshTokenItem.Role,
 		Client:   refreshTokenItem.Client,
 	}
 	return this.NewAuth(ctx, newAuthParameter, result)
@@ -122,21 +123,21 @@ func (this *serviceImpl) AccessTokenAuth(ctx context.Context, parameter *AccessT
 type TokenClaims struct {
 	UUID 		string 		`json:"uuid"`
 	UserId 		uint64 		`json:"userId"`
-	RoleId 		uint64 		`json:"roleId"`
 	UserName 	string 		`json:"userName"`
+	Role 		string		`json:"role"`
 	SignedId	string		`json:"signed_id"`
 	jwt.StandardClaims
 }
 
-func generateToken(uuid string,  client string, userId, roleId uint64, userName string, signedId string) (tokenItem *TokenItem, err error) {
+func generateToken(uuid, client string, userId uint64, userName, role, signedId string) (tokenItem *TokenItem, err error) {
 	expireTime := time.Now().Add(_config.RefreshTokenExpiresTime)
 	iat := time.Now().Unix()
 	jti := strconv.FormatInt(_idWorker.GetId(), 10)
 	c := TokenClaims{
 		UUID: 			uuid,
 		UserId:			userId,
-		RoleId: 		roleId,
 		UserName:       userName,
+		Role: 			role,
 		SignedId: 		signedId,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expireTime.Unix(),
@@ -157,8 +158,8 @@ func generateToken(uuid string,  client string, userId, roleId uint64, userName 
 			UUID:      uuid,
 			SignedId:  signedId,
 			UserId:    userId,
-			RoleId: 	roleId,
 			UserName:  userName,
+			Role: 	   role,
 			Token:     token,
 			Key:       "",
 			Client:    client,

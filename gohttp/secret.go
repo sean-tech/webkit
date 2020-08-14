@@ -12,7 +12,7 @@ import (
 	"sync"
 )
 
-type TokenParseFunc func(ctx context.Context, token string) (userId, roleId uint64, userName, key string, err error)
+type TokenParseFunc func(ctx context.Context, token string) (userId uint64, userName, role, key string, err error)
 
 type SecretParams struct {
 	Secret string	`json:"secret" validate:"required,base64"`
@@ -25,7 +25,7 @@ type RsaConfig struct {
 }
 
 type ISecretManager interface {
-	InterceptRsa(rsa *RsaConfig) gin.HandlerFunc
+	InterceptRsa() gin.HandlerFunc
 	InterceptToken(tokenParse TokenParseFunc) gin.HandlerFunc
 	InterceptAes() gin.HandlerFunc
 }
@@ -48,7 +48,8 @@ type secretManagerImpl struct {
 /**
  * rsa拦截校验
  */
-func (this *secretManagerImpl) InterceptRsa(rsa *RsaConfig) gin.HandlerFunc {
+func (this *secretManagerImpl) InterceptRsa() gin.HandlerFunc {
+	var rsa = _config.Rsa
 	if err := validate.ValidateParameter(rsa); err != nil {
 		log.Fatal(err)
 	}
@@ -95,14 +96,14 @@ func (this *secretManagerImpl) InterceptRsa(rsa *RsaConfig) gin.HandlerFunc {
 func (this *secretManagerImpl) InterceptToken(tokenParse TokenParseFunc) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		g := Gin{ctx}
-		if userId, roleId, userName, key, err := tokenParse(ctx, ctx.GetHeader("Authorization")); err != nil {
+		if userId, userName, role, key, err := tokenParse(ctx, ctx.GetHeader("Authorization")); err != nil {
 			g.ResponseError(err)
 			ctx.Abort()
 			return
 		} else {
 			requisition.GetRequisition(ctx).UserId = userId
-			requisition.GetRequisition(ctx).RoleId = roleId
 			requisition.GetRequisition(ctx).UserName = userName
+			requisition.GetRequisition(ctx).Role = role
 			g.getGinRequisition().Key, _ = hex.DecodeString(key)
 			// next
 			ctx.Next()

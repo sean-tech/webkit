@@ -39,6 +39,7 @@ func (this *userServiceImpl) UserAdd(ctx context.Context, parameter *UserAddPara
 
 func TestRpcServer(t *testing.T) {
 	logging.Setup(logging.LogConfig{
+		RunMode: 		 "debug",
 		LogSavePath:     "/Users/sean/Desktop/",
 		LogPrefix:       "rpctest",
 	})

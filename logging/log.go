@@ -50,9 +50,9 @@ var (
 )
 
 type LogConfig struct {
-	RunMode 		string	`json:"run_mode" validate:"required,oneof=debug test release"`
-	LogSavePath 	string	`json:"log_save_path" validate:"required,gt=1"`
-	LogPrefix		string	`json:"log_prefix" validate:"required,gt=1"`
+	RunMode 		string	`validate:"required,oneof=debug test release"`
+	LogSavePath 	string	`validate:"required,gt=1"`
+	LogPrefix		string	`validate:"required,gt=1"`
 }
 var _config LogConfig
 

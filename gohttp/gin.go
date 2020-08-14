@@ -35,13 +35,15 @@ type CError interface {
 }
 
 type HttpConfig struct {
-	RunMode 			string			`json:"run_mode" validate:"required,oneof=debug test release"`
+	RunMode 			string			`validate:"required,oneof=debug test release"`
 	WorkerId 			int64			`json:"worker_id" validate:"min=0"`
-	HttpPort            int				`json:"http_port" validate:"required,min=1,max=10000"`
+	HttpPort            int
 	ReadTimeout         time.Duration	`json:"read_timeout" validate:"required,gte=1"`
 	WriteTimeout        time.Duration	`json:"write_timeout" validate:"required,gte=1"`
 	CorsAllow			bool			`json:"cors_allow"`
 	CorsAllowOrigins	[]string		`json:"cors_allow_origins"`
+	RsaOpen bool                   		`json:"rsa_open"`
+	Rsa 	*RsaConfig      			`json:"rsa"`
 }
 
 /** 服务注册回调函数 **/
@@ -60,6 +62,14 @@ var (
 func HttpServerServe(config HttpConfig, logger IGinLogger, registerFunc GinRegisterFunc) {
 	if err := validate.ValidateParameter(config); err != nil {
 		log.Fatal(err)
+	}
+	if config.RsaOpen {
+		if config.Rsa == nil {
+			log.Fatal("server http start error : secret is nil")
+		}
+		if err := validate.ValidateParameter(config.Rsa); err != nil {
+			log.Fatal(err)
+		}
 	}
 	_config = config
 	_idWorker, _ = foundation.NewWorker(config.WorkerId)

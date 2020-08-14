@@ -13,7 +13,6 @@ import (
 	"github.com/sean-tech/gokit/validate"
 	"github.com/sean-tech/webkit/auth"
 	"github.com/sean-tech/webkit/config"
-	"github.com/sean-tech/webkit/database"
 	"github.com/sean-tech/webkit/gohttp"
 	"github.com/sean-tech/webkit/gorpc"
 	"github.com/sean-tech/webkit/logging"
@@ -195,11 +194,11 @@ func TestUserServer(t *testing.T) {
 	// concurrent
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	// config
-	config.Setup("user", "", testconfig, func(appConfig *config.AppConfig) {
+	config.Setup("user", 9022, 9021, "/Users/sean/Desktop/", testconfig, func(appConfig *config.AppConfig) {
 		// log start
 		logging.Setup(*appConfig.Log)
 		// database start
-		database.SetupRedis(*appConfig.Redis).Open()
+		//database.SetupRedis(*appConfig.Redis).Open()
 		// service start
 		gorpc.ServerServe(*appConfig.Rpc, logging.Logger(), RegisterService)
 		// server start
@@ -222,15 +221,15 @@ func RegisterApi(engine *gin.Engine)  {
 	//	ClientPubKey:     string(clientPubKeyBytes),
 	//})
 
-	var tokenHandler =  gohttp.SecretManager().InterceptToken(func(ctx context.Context, token string) (userId, roleId uint64, userName, key string, err error) {
+	var tokenHandler =  gohttp.SecretManager().InterceptToken(func(ctx context.Context, token string) (userId uint64, userName, role, key string, err error) {
 		var parameter = &auth.AccessTokenAuthParameter{
 			AccessToken: token,
 		}
 		var accessTokenItem = new(auth.TokenItem)
 		if err := gorpc.Call(SERVICE_AUTH, ctx, AUTH_METHOD_ACCESSTOKEN_AUTH, parameter, accessTokenItem); err != nil {
-			return 0, 0, "", "", err
+			return 0, "", "", "", err
 		}
-		return accessTokenItem.UserId, accessTokenItem.RoleId, accessTokenItem.UserName, accessTokenItem.Key, nil
+		return accessTokenItem.UserId, accessTokenItem.UserName, accessTokenItem.Role, accessTokenItem.Key, nil
 	})
 
 	apiv1 := engine.Group("api/v1/user/")

@@ -37,6 +37,7 @@ type GoodsPayParameter struct {
 
 func TestGinServer(t *testing.T) {
 	logging.Setup(logging.LogConfig{
+		RunMode: "test",
 		LogSavePath:     "/Users/sean/Desktop/",
 		LogPrefix:       "gintest",
 	})

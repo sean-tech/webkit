@@ -15,14 +15,14 @@ var testconfig = &config.AppConfig{
 		LogSavePath: "/Users/sean/Desktop/",
 		LogPrefix:   "webkit",
 	},
-	RsaOpen: false,
-	Rsa:     nil,
 	Http:    &gohttp.HttpConfig{
 		RunMode:      "debug",
 		WorkerId:     3,
 		HttpPort:     9022,
 		ReadTimeout:  60 * time.Second,
 		WriteTimeout: 60 * time.Second,
+		RsaOpen: false,
+		Rsa:     nil,
 	},
 	Rpc:     &gorpc.RpcConfig{
 		RunMode:              "debug",
@@ -58,5 +58,11 @@ var testconfig = &config.AppConfig{
 		MaxIdle:     30,
 		MaxActive:   30,
 		IdleTimeout: 200 * time.Second,
+	},
+	CE: &config.ConfigEtcd{
+		EtcdEndPoints:      []string{"127.0.0.1:2379"},
+		EtcdConfigBasePath: "/sean-tech/webkit/config",
+		EtcdConfigUserName: "module_config_user",
+		EtcdConfigPassword: "module_config_user_pwd",
 	},
 }

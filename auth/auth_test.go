@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/sean-tech/gokit/storage"
 	"github.com/sean-tech/webkit/config"
 	"github.com/sean-tech/webkit/database"
 	"github.com/sean-tech/webkit/gohttp"
@@ -32,19 +33,15 @@ var authConfig = AuthConfig{
 }
 
 var testconfig = &config.AppConfig{
-	Log: &logging.LogConfig{
-		RunMode:     "debug",
-		LogSavePath: "/Users/sean/Desktop/",
-		LogPrefix:   "auth",
-	},
-	RsaOpen: false,
-	Rsa:     nil,
+	Log: nil,
 	Http:    &gohttp.HttpConfig{
 		RunMode:      "debug",
 		WorkerId:     3,
 		HttpPort:     9002,
 		ReadTimeout:  60 * time.Second,
 		WriteTimeout: 60 * time.Second,
+		RsaOpen: false,
+		Rsa: nil,
 	},
 	Rpc:     &gorpc.RpcConfig{
 		RunMode:              "debug",
@@ -81,20 +78,26 @@ var testconfig = &config.AppConfig{
 		MaxActive:   30,
 		IdleTimeout: 200 * time.Second,
 	},
+	CE: &config.ConfigEtcd{
+		EtcdEndPoints:      []string{"127.0.0.1:2379"},
+		EtcdConfigBasePath: "/sean-tech/webkit/config",
+		EtcdConfigUserName: "module_config_user",
+		EtcdConfigPassword: "module_config_user_pwd",
+	},
 }
 
 func TestAuthServer(t *testing.T) {
 	// concurrent
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	// config
-	config.Setup("auth", "", testconfig, func(appConfig *config.AppConfig) {
+	config.Setup("auth", 9002, 9001, "/Users/sean/Desktop/", testconfig, func(appConfig *config.AppConfig) {
 		// log start
 		logging.Setup(*appConfig.Log)
 		// database start
-		database.SetupRedis(*appConfig.Redis).Open()
+		//database.SetupRedis(*appConfig.Redis).Open()
 		// auth setup
-		Setup(authConfig, database.Redis())
-		//Setup(authConfig, storage.Hash())
+		//Setup(authConfig, database.Redis())
+		Setup(authConfig, storage.Hash())
 		// service start
 		gorpc.ServerServe(*appConfig.Rpc, logging.Logger(), RegisterService)
 		// server start

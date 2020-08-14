@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/sean-tech/gokit/fileutils"
 	"io/ioutil"
 	"testing"
 )
@@ -32,16 +33,15 @@ type CC struct {
 
 }
 
-func (this *CC) ConfigLoad(path string, config *AppConfig) error {
-	fmt.Println("path is ", path)
+func (this *CC) AppConfigLoad(worker *Worker, config *AppConfig) error {
+	fmt.Println("module is ", worker.Module, "ip is ", worker.Ip)
 	*config = AppConfig{
 		Log:     nil,
-		RsaOpen: false,
-		Rsa:     nil,
 		Http:    nil,
 		Rpc:     nil,
 		Mysql:   nil,
 		Redis:   nil,
+		CE: 	 nil,
 	}
 	return nil
 }
@@ -51,7 +51,7 @@ func TestRunServer(t *testing.T) {
 }
 
 func TestCallServer(t *testing.T) {
-	config := ConfigCenterLoading("192.168.1.20:1234", "user")
+	config := configLoadFromCenter("192.168.1.20:1234", "user")
 	fmt.Println(config)
 }
 
@@ -60,5 +60,11 @@ func TestLocalIp(t *testing.T) {
 	fmt.Println(GetLocalIP())
 }
 
-
+func TestFilePahtJudge(t *testing.T) {
+	if fileutils.CheckExist("/Users/sean/Desktop/") == true {
+		fmt.Println("file exist")
+	} else {
+		fmt.Println("file not exist")
+	}
+}
 

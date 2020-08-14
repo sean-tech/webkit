@@ -32,8 +32,8 @@ type IRpcxLogger interface {
 var _logger 	rpcxLog.Logger
 
 type RpcConfig struct {
-	RunMode string							`json:"run_mode" validate:"required,oneof=debug test release"`
-	RpcPort               	int				`json:"rpc_port" validate:"required,min=1,max=10000"`
+	RunMode string							`validate:"required,oneof=debug test release"`
+	RpcPort               	int
 	RpcPerSecondConnIdle  	int64			`json:"rpc_per_second_conn_idle" validate:"required,gte=1"`
 	ReadTimeout           	time.Duration	`json:"read_timeout" validate:"required,gte=1"`
 	WriteTimeout          	time.Duration	`json:"write_timeout" validate:"required,gte=1"`
