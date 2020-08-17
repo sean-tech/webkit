@@ -43,7 +43,7 @@ type HttpConfig struct {
 	CorsAllow			bool			`json:"cors_allow"`
 	CorsAllowOrigins	[]string		`json:"cors_allow_origins"`
 	RsaOpen bool                   		`json:"rsa_open"`
-	Rsa 	*RsaConfig      			`json:"rsa"`
+	Rsa 	*RsaConfig
 }
 
 /** 服务注册回调函数 **/

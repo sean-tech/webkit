@@ -221,7 +221,7 @@ func RegisterApi(engine *gin.Engine)  {
 	//	ClientPubKey:     string(clientPubKeyBytes),
 	//})
 
-	var tokenHandler =  gohttp.SecretManager().InterceptToken(func(ctx context.Context, token string) (userId uint64, userName, role, key string, err error) {
+	var tokenHandler =  gohttp.InterceptToken(func(ctx context.Context, token string) (userId uint64, userName, role, key string, err error) {
 		var parameter = &auth.AccessTokenAuthParameter{
 			AccessToken: token,
 		}
@@ -235,7 +235,7 @@ func RegisterApi(engine *gin.Engine)  {
 	apiv1 := engine.Group("api/v1/user/")
 	{
 		apiv1.POST("login", Api().UserLogin)
-		apiv1.POST("get", tokenHandler, gohttp.SecretManager().InterceptAes(), Api().UserGet)
+		apiv1.POST("get", tokenHandler, gohttp.InterceptAes(), Api().UserGet)
 	}
 }
 

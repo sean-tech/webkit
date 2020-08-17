@@ -42,7 +42,7 @@ type RpcConfig struct {
 	TokenIssuer      		string        	`json:"token_issuer" validate:"required,gte=1"`
 	// tls
 	TlsOpen					bool			`json:"tls_open"`
-	Tls						*TlsConfig 		`json:"tls"`
+	Tls						*TlsConfig
 	// whiteList
 	WhiteListOpen 			bool			`json:"white_list_open"`
 	WhiteListIps			[]string		`json:"white_list_ips"`

@@ -9,10 +9,7 @@ import (
 	"github.com/sean-tech/gokit/requisition"
 	"github.com/sean-tech/gokit/validate"
 	"log"
-	"sync"
 )
-
-type TokenParseFunc func(ctx context.Context, token string) (userId uint64, userName, role, key string, err error)
 
 type SecretParams struct {
 	Secret string	`json:"secret" validate:"required,base64"`
@@ -24,31 +21,12 @@ type RsaConfig struct {
 	ClientPubKey 		string 			`json:"client_pub_key" validate:"required"`
 }
 
-type ISecretManager interface {
-	InterceptRsa() gin.HandlerFunc
-	InterceptToken(tokenParse TokenParseFunc) gin.HandlerFunc
-	InterceptAes() gin.HandlerFunc
-}
-
-var (
-	_secretManagerOnce sync.Once
-	_secretManager *secretManagerImpl
-)
-
-func SecretManager() ISecretManager {
-	_secretManagerOnce.Do(func() {
-		_secretManager = &secretManagerImpl{}
-	})
-	return _secretManager
-}
-
-type secretManagerImpl struct {
-}
+type TokenParseFunc func(ctx context.Context, token string) (userId uint64, userName, role, key string, err error)
 
 /**
  * rsa拦截校验
  */
-func (this *secretManagerImpl) InterceptRsa() gin.HandlerFunc {
+func InterceptRsa() gin.HandlerFunc {
 	var rsa = _config.Rsa
 	if err := validate.ValidateParameter(rsa); err != nil {
 		log.Fatal(err)
@@ -93,7 +71,7 @@ func (this *secretManagerImpl) InterceptRsa() gin.HandlerFunc {
 /**
  * token拦截校验
  */
-func (this *secretManagerImpl) InterceptToken(tokenParse TokenParseFunc) gin.HandlerFunc {
+func InterceptToken(tokenParse TokenParseFunc) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		g := Gin{ctx}
 		if userId, userName, role, key, err := tokenParse(ctx, ctx.GetHeader("Authorization")); err != nil {
@@ -114,7 +92,7 @@ func (this *secretManagerImpl) InterceptToken(tokenParse TokenParseFunc) gin.Han
 /**
  * aes拦截校验
  */
-func (this *secretManagerImpl) InterceptAes() gin.HandlerFunc {
+func InterceptAes() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		g := Gin{ctx}
 		var code = STATUS_CODE_SUCCESS

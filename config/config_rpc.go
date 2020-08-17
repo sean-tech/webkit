@@ -12,12 +12,13 @@ const ConfigCenterServiceName = "sean,tech/webkit/configcenter"
 const ConfigLoadMethodName = ".AppConfigLoad"
 
 type Worker struct {
+	Product string	`json:"product"`
 	Module 	string 	`json:"module"`
 	Ip 		string	`json:"ip"`
 }
 
 type IConfigCenter interface {
-	AppConfigLoad(worker *Worker, config *AppConfig) error
+	AppConfigLoad(worker *Worker, appcfg *AppConfig) error
 }
 
 func ConfigCernterServing(cc IConfigCenter, port int, whitelistips []string) {
