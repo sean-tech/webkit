@@ -71,8 +71,8 @@ type ConfigLoad func(appConfig *AppConfig)
 * localConfig，本地配置，当未指定cc时默认加载
 * load, 配置加载成功后回调
  */
-func Setup(module string, httpPort, rpcPort int, logPath string, localConfig *AppConfig, load ConfigLoad) {
-	setup(module, httpPort, rpcPort, logPath, "", localConfig, load)
+func Setup(product, module string, httpPort, rpcPort int, logPath string, localConfig *AppConfig, load ConfigLoad) {
+	setup(product, module, httpPort, rpcPort, logPath, "", localConfig, load)
 }
 
 /**
@@ -85,7 +85,7 @@ func Setup(module string, httpPort, rpcPort int, logPath string, localConfig *Ap
 * localConfig，本地配置，当未指定cc时默认加载
 * load, 配置加载成功后回调
 */
-func setup(module string, httpPort, rpcPort int, logPath, ccAddress string,  localConfig *AppConfig, load ConfigLoad) {
+func setup(product, module string, httpPort, rpcPort int, logPath, ccAddress string,  localConfig *AppConfig, load ConfigLoad) {
 
 	runmode_usage := "please use -runmode to pointing at runenv in:debug,test,release."
 	runmode := flag.String("runmode", foundation.RUN_MODE_RELEASE, runmode_usage)
@@ -140,7 +140,7 @@ func setup(module string, httpPort, rpcPort int, logPath, ccAddress string,  loc
 	// appcfg load
 	var appcfg *AppConfig; var loadinfo string
 	if ccaddress != nil && *ccaddress != "" { // load config from config center，when ccaddress set
-		appcfg = configLoadFromCenter(*ccaddress, module)
+		appcfg = configLoadFromCenter(*ccaddress, product, module)
 		loadinfo = "config load from configcenter finished.\n"
 	} else if localConfig == nil {
 		panic(ccaddress_usage)
@@ -166,7 +166,7 @@ func setup(module string, httpPort, rpcPort int, logPath, ccAddress string,  loc
 	load(appcfg)
 }
 
-func configLoadFromCenter(ccaddress, module string) *AppConfig {
+func configLoadFromCenter(ccaddress, product, module string) *AppConfig {
 	os.Stdout.Write([]byte("config loading from configcenter...\n"))
 	client, err := rpc.Dial("tcp", ccaddress)
 	if err != nil {
@@ -174,6 +174,7 @@ func configLoadFromCenter(ccaddress, module string) *AppConfig {
 	}
 
 	var worker = &Worker{
+		Product: product,
 		Module: module,
 		Ip:     GetLocalIP(),
 	}
@@ -183,4 +184,8 @@ func configLoadFromCenter(ccaddress, module string) *AppConfig {
 		log.Fatal(err)
 	}
 	return config
+}
+
+func TestCCAddress(product, module string, httpPort, rpcPort int, logPath, ccAddress string, load ConfigLoad) {
+	setup(product, module, httpPort, rpcPort, logPath, ccAddress, nil, load)
 }

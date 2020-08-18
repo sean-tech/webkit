@@ -51,7 +51,7 @@ func TestRunServer(t *testing.T) {
 }
 
 func TestCallServer(t *testing.T) {
-	config := configLoadFromCenter("192.168.1.20:1234", "user")
+	config := configLoadFromCenter("192.168.1.20:1234", "webkittest", "user")
 	fmt.Println(config)
 }
 
