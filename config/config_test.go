@@ -47,11 +47,14 @@ func (this *CC) AppConfigLoad(worker *Worker, config *AppConfig) error {
 }
 
 func TestRunServer(t *testing.T) {
-	ConfigCernterServing(new(CC), 1234, []string{"192.168.1.20"})
+	go ConfigCernterServing(new(CC), 1234, []string{"192.168.1.21"})
+	select {
+
+	}
 }
 
 func TestCallServer(t *testing.T) {
-	config := configLoadFromCenter("192.168.1.20:1234", "webkittest", "user")
+	config := configLoadFromCenter("192.168.1.21:1234", "webkittest", "user")
 	fmt.Println(config)
 }
 

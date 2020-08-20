@@ -46,7 +46,7 @@ func ConfigCernterServing(cc IConfigCenter, port int, whitelistips []string) {
 }
 
 func whiteListIpsFitter(clientIp string, whitelistips []string) bool {
-	if whitelistips == nil {
+	if whitelistips == nil || len(whitelistips) == 0 {
 		return true
 	}
 	for _, ip := range whitelistips {
