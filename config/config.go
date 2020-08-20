@@ -42,25 +42,25 @@ func (cfg *AppConfig) Validate() error {
 		if err := validate.ValidateParameter(cfg.Http); err != nil {
 			return err
 		}
-	}
-	if cfg.Http.RsaOpen {
-		if err := validate.ValidateParameter(cfg.Http.Rsa); err != nil {
-			return err
+		if cfg.Http.RsaOpen {
+			if err := validate.ValidateParameter(cfg.Http.Rsa); err != nil {
+				return err
+			}
 		}
 	}
 	if cfg.Rpc != nil {
 		if err := validate.ValidateParameter(cfg.Rpc); err != nil {
 			return err
 		}
-	}
-	if cfg.Rpc.TlsOpen {
-		if err := validate.ValidateParameter(cfg.Rpc.Tls); err != nil {
-			return err
+		if cfg.Rpc.TlsOpen {
+			if err := validate.ValidateParameter(cfg.Rpc.Tls); err != nil {
+				return err
+			}
 		}
-	}
-	if cfg.Rpc.Registry != nil {
-		if err := validate.ValidateParameter(cfg.Rpc.Registry); err != nil {
-			return err
+		if cfg.Rpc.Registry != nil {
+			if err := validate.ValidateParameter(cfg.Rpc.Registry); err != nil {
+				return err
+			}
 		}
 	}
 	if cfg.Mysql != nil {
