@@ -47,10 +47,7 @@ type RpcConfig struct {
 	WhiteListOpen 			bool			`json:"white_list_open"`
 	WhiteListIps			[]string		`json:"white_list_ips"`
 	// etcd
-	EtcdEndPoints 			[]string		`json:"etcd_end_points" validate:"required,gte=1,dive,tcp_addr"`
-	EtcdRpcBasePath 		string			`json:"etcd_rpc_base_path" validate:"required,gte=1"`
-	EtcdRpcUserName 		string			`json:"etcd_rpc_username" validate:"required,gte=1"`
-	EtcdRpcPassword 		string			`json:"etcd_rpc_password" validate:"required,gte=1"`
+	Registry				*EtcdRegistry
 }
 
 type TlsConfig struct {
@@ -58,6 +55,13 @@ type TlsConfig struct {
 	CACommonName 			string 			`json:"ca_common_name" validate:"required"`
 	ServerCert   			string 			`json:"server_cert" validate:"required"`
 	ServerKey    			string 			`json:"server_key" validate:"required"`
+}
+
+type EtcdRegistry struct {
+	EtcdEndPoints 			[]string		`json:"etcd_end_points" validate:"required,gte=1,dive,tcp_addr"`
+	EtcdRpcBasePath 		string			`json:"etcd_rpc_base_path" validate:"required,gte=1"`
+	EtcdRpcUserName 		string			`json:"etcd_rpc_username" validate:"required,gte=1"`
+	EtcdRpcPassword 		string			`json:"etcd_rpc_password" validate:"required,gte=1"`
 }
 
 /** 服务注册回调函数 **/
@@ -78,17 +82,7 @@ func ServerServe(config RpcConfig, logger rpcxLog.Logger, registerFunc RpcRegist
 		_logger = logger
 		rpcxLog.SetLogger(_logger)
 	}
-	if err := validate.ValidateParameter(config); err != nil {
-		log.Fatal(err)
-	}
-	if config.TlsOpen {
-		if config.Tls == nil {
-			log.Fatal("server rpc start error : secret is nil")
-		}
-		if err := validate.ValidateParameter(config.Tls); err != nil {
-			log.Fatal(err)
-		}
-	}
+	configValidate(config)
 	_config = config
 
 	// server
@@ -127,6 +121,26 @@ func ServerServe(config RpcConfig, logger rpcxLog.Logger, registerFunc RpcRegist
 	}()
 }
 
+func configValidate(config RpcConfig)  {
+	if err := validate.ValidateParameter(config); err != nil {
+		log.Fatal(err)
+	}
+	if config.Registry == nil {
+		log.Fatal("registry for rpc could not be nil.")
+	}
+	if err := validate.ValidateParameter(config.Registry); err != nil {
+		log.Fatal(err)
+	}
+	if config.TlsOpen {
+		if config.Tls == nil {
+			log.Fatal("server rpc start error : secret is nil")
+		}
+		if err := validate.ValidateParameter(config.Tls); err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
 func registerPlugins(s *server.Server, address string)  {
 	s.Plugins.Add(ServerLogger)
 	s.AuthFunc = serverAuth
@@ -158,8 +172,8 @@ func RegisterPluginEtcd(s *server.Server, serviceAddr string)  {
 
 	plugin := &serverplugin.EtcdV3RegisterPlugin{
 		ServiceAddress: "tcp@" + serviceAddr,
-		EtcdServers:    _config.EtcdEndPoints,
-		BasePath:       _config.EtcdRpcBasePath,
+		EtcdServers:    _config.Registry.EtcdEndPoints,
+		BasePath:       _config.Registry.EtcdRpcBasePath,
 		Metrics:        metrics.NewRegistry(),
 		Services:       nil,
 		UpdateInterval: time.Minute,
@@ -169,8 +183,8 @@ func RegisterPluginEtcd(s *server.Server, serviceAddr string)  {
 			ConnectionTimeout: 3 * time.Minute,
 			Bucket:            "",
 			PersistConnection: false,
-			Username:          _config.EtcdRpcUserName,
-			Password:          _config.EtcdRpcPassword,
+			Username:          _config.Registry.EtcdRpcUserName,
+			Password:          _config.Registry.EtcdRpcPassword,
 		},
 	}
 	err := plugin.Start()
@@ -244,13 +258,13 @@ func newDiscovery(serviceName string) client.ServiceDiscovery {
 		ConnectionTimeout: 0,
 		Bucket:            "",
 		PersistConnection: false,
-		Username:          _config.EtcdRpcUserName,
-		Password:          _config.EtcdRpcPassword,
+		Username:          _config.Registry.EtcdRpcUserName,
+		Password:          _config.Registry.EtcdRpcPassword,
 	}
 	if _rpc_testing == true {
 		discovery = client.NewInprocessDiscovery()
 	} else {
-		discovery = client.NewEtcdV3Discovery(_config.EtcdRpcBasePath, serviceName, _config.EtcdEndPoints, options)
+		discovery = client.NewEtcdV3Discovery(_config.Registry.EtcdRpcBasePath, serviceName, _config.Registry.EtcdEndPoints, options)
 	}
 	return discovery
 }

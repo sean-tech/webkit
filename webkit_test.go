@@ -194,7 +194,7 @@ func TestUserServer(t *testing.T) {
 	// concurrent
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	// config
-	config.Setup("user", 9022, 9021, "/Users/sean/Desktop/", testconfig, func(appConfig *config.AppConfig) {
+	config.Setup("wktest", "user", 9022, 9021, "/Users/sean/Desktop/", testconfig, func(appConfig *config.AppConfig) {
 		// log start
 		logging.Setup(*appConfig.Log)
 		// database start

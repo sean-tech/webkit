@@ -1,7 +1,6 @@
 package config
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"github.com/sean-tech/gokit/fileutils"
@@ -19,11 +18,11 @@ import (
 
 type AppConfig struct {
 	Log 	*logging.LogConfig
-	Http 	*gohttp.HttpConfig     	`json:"http" validate:"required"`
-	Rpc 	*gorpc.RpcConfig       	`json:"rpc" validate:"required"`
-	Mysql 	*database.MysqlConfig	`json:"mysql" validate:"required"`
-	Redis 	*database.RedisConfig 	`json:"redis" validate:"required"`
-	CE		*ConfigEtcd				`json:"ce" validate:"required"`
+	Http 	*gohttp.HttpConfig     	`json:"http"`
+	Rpc 	*gorpc.RpcConfig       	`json:"rpc"`
+	Mysql 	*database.MysqlConfig	`json:"mysql"`
+	Redis 	*database.RedisConfig 	`json:"redis"`
+	CE		*ConfigEtcd
 }
 
 type ConfigEtcd struct {
@@ -34,11 +33,23 @@ type ConfigEtcd struct {
 }
 
 func (cfg *AppConfig) Validate() error {
-	if err := validate.ValidateParameter(cfg); err != nil {
-		return err
+	if cfg.Log != nil {
+		if err := validate.ValidateParameter(cfg.Log); err != nil {
+			return err
+		}
+	}
+	if cfg.Http != nil {
+		if err := validate.ValidateParameter(cfg.Http); err != nil {
+			return err
+		}
 	}
 	if cfg.Http.RsaOpen {
 		if err := validate.ValidateParameter(cfg.Http.Rsa); err != nil {
+			return err
+		}
+	}
+	if cfg.Rpc != nil {
+		if err := validate.ValidateParameter(cfg.Rpc); err != nil {
 			return err
 		}
 	}
@@ -47,12 +58,24 @@ func (cfg *AppConfig) Validate() error {
 			return err
 		}
 	}
-	if cfg.Http != nil && cfg.Rpc != nil {
-		if cfg.Log.RunMode != cfg.Http.RunMode {
-			return errors.New("runmode is not equal between log in http")
+	if cfg.Rpc.Registry != nil {
+		if err := validate.ValidateParameter(cfg.Rpc.Registry); err != nil {
+			return err
 		}
-		if cfg.Http.RunMode != cfg.Rpc.RunMode {
-			return errors.New("runmode is not equal between http in rpc")
+	}
+	if cfg.Mysql != nil {
+		if err := validate.ValidateParameter(cfg.Mysql); err != nil {
+			return err
+		}
+	}
+	if cfg.Redis != nil {
+		if err := validate.ValidateParameter(cfg.Redis); err != nil {
+			return err
+		}
+	}
+	if cfg.CE != nil {
+		if err := validate.ValidateParameter(cfg.CE); err != nil {
+			return err
 		}
 	}
 	return nil

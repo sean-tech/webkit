@@ -36,10 +36,12 @@ var testconfig = &config.AppConfig{
 		Tls:                  nil,
 		WhiteListOpen:        false,
 		WhiteListIps:         nil,
-		EtcdEndPoints:        []string{"127.0.0.1:2379"},
-		EtcdRpcBasePath:      "/sean-tech/webkit/rpc",
-		EtcdRpcUserName:      "root",
-		EtcdRpcPassword:      "etcd.user.root.pwd",
+		Registry: &gorpc.EtcdRegistry{
+			EtcdEndPoints:        []string{"127.0.0.1:2379"},
+			EtcdRpcBasePath:      "/sean-tech/webkit/rpc",
+			EtcdRpcUserName:      "root",
+			EtcdRpcPassword:      "etcd.user.root.pwd",
+		},
 	},
 	Mysql:   &database.MysqlConfig{
 		WorkerId:    3,
