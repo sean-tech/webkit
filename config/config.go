@@ -173,10 +173,14 @@ func setup(product, module string, httpPort, rpcPort int, logPath, ccAddress str
 	}
 
 	// appcfg set & validate
-	appcfg.Http.RunMode = *runmode
-	appcfg.Http.HttpPort = *httpport
-	appcfg.Rpc.RunMode = *runmode
-	appcfg.Rpc.RpcPort = *rpcport
+	if appcfg.Http != nil {
+		appcfg.Http.RunMode = *runmode
+		appcfg.Http.HttpPort = *httpport
+	}
+	if appcfg.Rpc != nil {
+		appcfg.Rpc.RunMode = *runmode
+		appcfg.Rpc.RpcPort = *rpcport
+	}
 	appcfg.Log = &logging.LogConfig{
 		RunMode:     *runmode,
 		LogSavePath: *logpath,
