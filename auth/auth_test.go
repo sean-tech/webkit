@@ -21,6 +21,7 @@ import (
 
 const (
 	SERVICE_AUTH = "Auth"
+	SERVER_AUTH = "auth"
 )
 
 var authConfig = AuthConfig{
@@ -55,10 +56,12 @@ var testconfig = &config.AppConfig{
 		Tls:                  nil,
 		WhiteListOpen:        false,
 		WhiteListIps:         nil,
-		EtcdEndPoints:        []string{"127.0.0.1:2379"},
-		EtcdRpcBasePath:      "/sean-tech/webkit/rpc",
-		EtcdRpcUserName:      "root",
-		EtcdRpcPassword:      "etcd.user.root.pwd",
+		Registry: &gorpc.EtcdRegistry{
+			EtcdEndPoints:        []string{"127.0.0.1:2379"},
+			EtcdRpcBasePath:      "/sean-tech/webkit/rpc",
+			EtcdRpcUserName:      "root",
+			EtcdRpcPassword:      "etcd.user.root.pwd",
+		},
 	},
 	Mysql:   &database.MysqlConfig{
 		WorkerId:    3,
@@ -90,7 +93,7 @@ func TestAuthServer(t *testing.T) {
 	// concurrent
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	// config
-	config.Setup("auth", 9002, 9001, "/Users/sean/Desktop/", testconfig, func(appConfig *config.AppConfig) {
+	config.Setup("webkittest", "auth", 9002, 9001, "/Users/sean/Desktop/", testconfig, func(appConfig *config.AppConfig) {
 		// log start
 		logging.Setup(*appConfig.Log)
 		// database start

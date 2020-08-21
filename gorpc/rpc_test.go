@@ -62,10 +62,12 @@ func TestRpcServer(t *testing.T) {
 			CACert:			  string(CACertBytes),
 			CACommonName:			  "ex.sean",
 		},
-		EtcdRpcUserName: "root",
-		EtcdRpcPassword: "etcd.user.root.pwd",
-		EtcdRpcBasePath:      "sean.tech/webkit/serving/rpc",
-		EtcdEndPoints:        []string{"127.0.0.1:2379"},
+		Registry: &EtcdRegistry{
+			EtcdRpcUserName: "root",
+			EtcdRpcPassword: "etcd.user.root.pwd",
+			EtcdRpcBasePath: "sean.tech/webkit/serving/rpc",
+			EtcdEndPoints:   []string{"127.0.0.1:2379"},
+		},
 	},
 		logging.Logger(),
 		func(server *server.Server) {
@@ -73,7 +75,7 @@ func TestRpcServer(t *testing.T) {
 	})
 
 	var user = new(UserInfo)
-	client := CreateClient("User")
+	client := CreateClient("User", "")
 	if err := client.Call(context.Background(), "UserAdd", &UserAddParameter{
 		UserName: "1237757@qq.com",
 		Password: "Aa123456",

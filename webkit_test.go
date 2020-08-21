@@ -26,6 +26,7 @@ import (
 
 const SERVICE_USER = "User"
 const SERVICE_AUTH = "Auth"
+const SERVER_AUTH = "auth"
 const AUTH_METHOD_NEW_AUTH = "NewAuth"
 const AUTH_METHOD_ACCESSTOKEN_AUTH = "AccessTokenAuth"
 const AUTH_CODE = "this is auth code for validate"
@@ -152,7 +153,7 @@ func (this *userServiceImpl) UserLogin(ctx context.Context, parameter *UserLogin
 		Client:   "iOS",
 	}
 	var authResult = new(auth.AuthResult)
-	if err := gorpc.Call(SERVICE_AUTH, ctx, AUTH_METHOD_NEW_AUTH, authParameter, authResult); err != nil {
+	if err := gorpc.Call(SERVICE_AUTH, SERVER_AUTH, ctx, AUTH_METHOD_NEW_AUTH, authParameter, authResult); err != nil {
 		return err
 	}
 	userInfo.AuthResult = authResult
@@ -226,7 +227,7 @@ func RegisterApi(engine *gin.Engine)  {
 			AccessToken: token,
 		}
 		var accessTokenItem = new(auth.TokenItem)
-		if err := gorpc.Call(SERVICE_AUTH, ctx, AUTH_METHOD_ACCESSTOKEN_AUTH, parameter, accessTokenItem); err != nil {
+		if err := gorpc.Call(SERVICE_AUTH, SERVER_AUTH, ctx, AUTH_METHOD_ACCESSTOKEN_AUTH, parameter, accessTokenItem); err != nil {
 			return 0, "", "", "", err
 		}
 		return accessTokenItem.UserId, accessTokenItem.UserName, accessTokenItem.Role, accessTokenItem.Key, nil

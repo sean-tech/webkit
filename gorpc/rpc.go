@@ -210,7 +210,7 @@ var clientMap sync.Map
 /**
  * 创建rpc调用客户端，基于Etcd服务发现
  */
-func CreateClient(serviceName string) client.XClient {
+func CreateClient(serviceName, serverName string) client.XClient {
 	if c, ok := clientMap.Load(serviceName); ok {
 		return c.(client.XClient)
 	}
@@ -240,7 +240,7 @@ func CreateClient(serviceName string) client.XClient {
 			RootCAs:            certPool,
 			Certificates:       []tls.Certificate{cert},
 			InsecureSkipVerify: false,
-			ServerName: serviceName + "." + _config.Tls.CACommonName,
+			ServerName: serverName + "." + _config.Tls.CACommonName,
 		}
 	}
 OPTION_SECRET_SETED:
@@ -272,8 +272,8 @@ func newDiscovery(serviceName string) client.ServiceDiscovery {
 /**
  * call
  */
-func Call(serviceName string, ctx context.Context, serviceMethod string, args interface{}, reply interface{}) error {
-	client := CreateClient(serviceName)
+func Call(serviceName, serverName string, ctx context.Context, serviceMethod string, args interface{}, reply interface{}) error {
+	client := CreateClient(serviceName, serverName)
 	return ClientCall(client, ctx, serviceMethod, args, reply)
 }
 
@@ -292,8 +292,8 @@ func ClientCall(client client.XClient, ctx context.Context, serviceMethod string
 /**
  * go
  */
-func Go(serviceName string, ctx context.Context, serviceMethod string, args interface{}, reply interface{}, done chan *client.Call) (*client.Call, error) {
-	client := CreateClient(serviceName)
+func Go(serviceName, serverName string, ctx context.Context, serviceMethod string, args interface{}, reply interface{}, done chan *client.Call) (*client.Call, error) {
+	client := CreateClient(serviceName, serverName)
 	return ClientGo(client, ctx, serviceMethod, args, reply, done)
 }
 
