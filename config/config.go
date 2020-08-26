@@ -17,12 +17,12 @@ import (
 )
 
 type AppConfig struct {
-	Log 	*logging.LogConfig
+	Log 	*logging.LogConfig		`json:"-"`
 	Http 	*gohttp.HttpConfig     	`json:"http"`
 	Rpc 	*gorpc.RpcConfig       	`json:"rpc"`
 	Mysql 	*database.MysqlConfig	`json:"mysql"`
 	Redis 	*database.RedisConfig 	`json:"redis"`
-	CE		*ConfigEtcd
+	CE		*ConfigEtcd				`json:"-"`
 }
 
 type ConfigEtcd struct {

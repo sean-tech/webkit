@@ -32,7 +32,7 @@ type IRpcxLogger interface {
 var _logger 	rpcxLog.Logger
 
 type RpcConfig struct {
-	RunMode string							`validate:"required,oneof=debug test release"`
+	RunMode string							`json:"-" validate:"required,oneof=debug test release"`
 	RpcPort               	int
 	RpcPerSecondConnIdle  	int64			`json:"rpc_per_second_conn_idle" validate:"required,gte=1"`
 	ReadTimeout           	time.Duration	`json:"read_timeout" validate:"required,gte=1"`
@@ -42,12 +42,12 @@ type RpcConfig struct {
 	TokenIssuer      		string        	`json:"token_issuer" validate:"required,gte=1"`
 	// tls
 	TlsOpen					bool			`json:"tls_open"`
-	Tls						*TlsConfig
+	Tls						*TlsConfig		`json:"-"`
 	// whiteList
 	WhiteListOpen 			bool			`json:"white_list_open"`
 	WhiteListIps			[]string		`json:"white_list_ips"`
 	// etcd
-	Registry				*EtcdRegistry
+	Registry				*EtcdRegistry	`json:"-"`
 }
 
 type TlsConfig struct {

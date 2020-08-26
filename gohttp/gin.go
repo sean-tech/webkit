@@ -35,15 +35,15 @@ type CError interface {
 }
 
 type HttpConfig struct {
-	RunMode 			string			`validate:"required,oneof=debug test release"`
+	RunMode 			string			`json:"-" validate:"required,oneof=debug test release"`
 	WorkerId 			int64			`json:"worker_id" validate:"min=0"`
-	HttpPort            int
+	HttpPort            int				`json:"-"`
 	ReadTimeout         time.Duration	`json:"read_timeout" validate:"required,gte=1"`
 	WriteTimeout        time.Duration	`json:"write_timeout" validate:"required,gte=1"`
 	CorsAllow			bool			`json:"cors_allow"`
 	CorsAllowOrigins	[]string		`json:"cors_allow_origins"`
 	RsaOpen bool                   		`json:"rsa_open"`
-	Rsa 	*RsaConfig
+	Rsa 	*RsaConfig					`json:"-"`
 }
 
 /** 服务注册回调函数 **/
@@ -100,6 +100,16 @@ func HttpServerServe(config HttpConfig, logger IGinLogger, registerFunc GinRegis
 	})
 	engine.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
 		// 你的自定义格式
+		if param.ErrorMessage == "" {
+			return fmt.Sprintf("[GIN]%s requestid:%d clientip:%s method:%s path:%s code:%d\n",
+				param.TimeStamp.Format("2006/01/02 15:04:05"),
+				param.Keys[key_request_id].(uint64),
+				param.ClientIP,
+				param.Method,
+				param.Path,
+				param.StatusCode,
+			)
+		}
 		return fmt.Sprintf("[GIN]%s requestid:%d clientip:%s method:%s path:%s code:%d errmsg:%s\n",
 			param.TimeStamp.Format("2006/01/02 15:04:05"),
 			param.Keys[key_request_id].(uint64),
