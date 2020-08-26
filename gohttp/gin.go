@@ -36,7 +36,7 @@ type CError interface {
 
 type HttpConfig struct {
 	RunMode 			string			`json:"-" validate:"required,oneof=debug test release"`
-	WorkerId 			int64			`json:"worker_id" validate:"min=0"`
+	WorkerId 			int64			`json:"-" validate:"min=0"`
 	HttpPort            int				`json:"-"`
 	ReadTimeout         time.Duration	`json:"read_timeout" validate:"required,gte=1"`
 	WriteTimeout        time.Duration	`json:"write_timeout" validate:"required,gte=1"`

@@ -26,7 +26,7 @@ type IMysqlManager interface {
 }
 
 type MysqlConfig struct{
-	WorkerId 	int64			`json:"worker_id" validate:"min=0"`
+	WorkerId 	int64			`json:"-" validate:"min=0"`
 	Type 		string 			`json:"type" validate:"required,oneof=mysql"`
 	User 		string			`json:"user" validate:"required,gte=1"`
 	Password 	string			`json:"password" validate:"required,gte=1"`
