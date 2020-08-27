@@ -21,7 +21,9 @@ type IConfigCenter interface {
 	AppConfigLoad(worker *Worker, appcfg *AppConfig) error
 }
 
-func ConfigCernterServing(cc IConfigCenter, port int, whitelistips []string) {
+type IpFitter func (clientIp string) bool
+
+func ConfigCernterServing(cc IConfigCenter, port int, fitter IpFitter) {
 	rpc.RegisterName(ConfigCenterServiceName, cc)
 
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
@@ -37,27 +39,13 @@ func ConfigCernterServing(cc IConfigCenter, port int, whitelistips []string) {
 		if ip, _, err := net.SplitHostPort(strings.TrimSpace(conn.RemoteAddr().String())); err == nil {
 			clientIp = ip
 		}
-		if whiteListIpsFitter(clientIp, whitelistips) == true {
+		if fitter(clientIp) == true {
 			go rpc.ServeConn(conn)
 		} else {
 			conn.Close()
 		}
 	}
 }
-
-func whiteListIpsFitter(clientIp string, whitelistips []string) bool {
-	if whitelistips == nil || len(whitelistips) == 0 {
-		return true
-	}
-	for _, ip := range whitelistips {
-		if clientIp == ip {
-			return true
-		}
-	}
-	return false
-}
-
-
 
 func GetIPs() (ips []string){
 	addrs,err := net.InterfaceAddrs()
