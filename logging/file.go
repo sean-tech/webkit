@@ -17,20 +17,13 @@ func getLogFilePath() string {
 	return _config.LogSavePath
 }
 
-func getLastDayLogFileName() string {
+func getLastDayLogFileName(flag FileFlag) string {
 	lastDayTime := time.Now().AddDate(0, 0, -1)
-	return fmt.Sprintf("%s_%s.%s",
-		_config.LogPrefix,
-		lastDayTime.Format(__time_format),
-		__logfile_ext,
-	)
+	return fmt.Sprintf("%s_%s_%s.%s", _config.LogPrefix, flag, lastDayTime.Format(__time_format), __logfile_ext)
 }
 
-func getLogFileName() string {
-	return fmt.Sprintf("%s.%s",
-		_config.LogPrefix,
-		__logfile_ext,
-	)
+func getLogFileName(flag FileFlag) string {
+	return fmt.Sprintf("%s_%s.%s", _config.LogPrefix, flag, __logfile_ext)
 }
 
 func openLogFile(fileName, filePath string) (*os.File, error) {
@@ -57,14 +50,14 @@ func openLogFile(fileName, filePath string) (*os.File, error) {
 /**
  * return result of log file should rotate, if should, return true
  */
-func logFileShouldRotate() bool {
+func logFileShouldRotate(flag FileFlag) bool {
 	// 默认日志文件不存在，无初始化文件，不继续处理
-	currentLogFileExist := fileutils.CheckExist(getLogFilePath() + getLogFileName())
+	currentLogFileExist := fileutils.CheckExist(getLogFilePath() + getLogFileName(flag))
 	if !currentLogFileExist {
 		return false
 	}
 	// 昨日日志文件存在，说明已处理，不继续处理
-	lastDayLogFileExist := fileutils.CheckExist(getLogFilePath() + getLastDayLogFileName())
+	lastDayLogFileExist := fileutils.CheckExist(getLogFilePath() + getLastDayLogFileName(flag))
 	if lastDayLogFileExist {
 		return false
 	}
@@ -74,9 +67,9 @@ func logFileShouldRotate() bool {
 /**
  * log file rotate
  */
-func logFileRotate() error {
-	src := getLogFilePath() + getLogFileName()
-	dst := getLogFilePath() + getLastDayLogFileName()
+func logFileRotate(flag FileFlag) error {
+	src := getLogFilePath() + getLogFileName(flag)
+	dst := getLogFilePath() + getLastDayLogFileName(flag)
 	if _, err := fileutils.CopyFile(dst, src); err != nil {
 		return err
 	}
@@ -86,20 +79,20 @@ func logFileRotate() error {
 /**
  * unused
  */
-func fileTimePassDaySlice() bool {
+func fileTimePassDaySlice(flag FileFlag) bool {
 	// 默认日志文件不存在，无初始化文件，不继续处理
-	currentLogFileExist := fileutils.CheckExist(getLogFilePath() + getLogFileName())
+	currentLogFileExist := fileutils.CheckExist(getLogFilePath() + getLogFileName(flag))
 	if !currentLogFileExist {
 		return false
 	}
 	// 昨日日志文件存在，说明已处理，不继续处理
-	lastDayLogFileExist := fileutils.CheckExist(getLogFilePath() + getLastDayLogFileName())
+	lastDayLogFileExist := fileutils.CheckExist(getLogFilePath() + getLastDayLogFileName(flag))
 	if lastDayLogFileExist {
 		return false
 	}
 	// 把当前日志文件重命名为昨日日志文件
-	originalPath := getLogFilePath() + getLogFileName()
-	newPath := getLogFilePath() + getLastDayLogFileName()
+	originalPath := getLogFilePath() + getLogFileName(flag)
+	newPath := getLogFilePath() + getLastDayLogFileName(flag)
 	err := os.Rename(originalPath, newPath)
 	if err != nil {
 		Error(err)
@@ -107,11 +100,5 @@ func fileTimePassDaySlice() bool {
 	}
 	return true
 }
-
-
-
-
-
-
 
 

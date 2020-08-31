@@ -338,3 +338,17 @@ func TestErrshow(t *testing.T) {
 	err := foundation.NewError(nil, 1, "haha")
 	fmt.Println(err.Error())
 }
+
+func TestLog(t *testing.T) {
+	logging.Setup(logging.LogConfig{
+		RunMode:     "debug",
+		LogSavePath: "/Users/sean/Desktop/",
+		LogPrefix:   "logtest",
+	})
+	logging.Debug("hahahahah")
+	logging.Info("this is info log")
+	logging.Error("an error occured")
+	logging.Logger().Debugf("debugf:%d, %d, %d", 1, 2, 3)
+	logging.Logger().Infof("infof:%d, %d, %d", 1, 2, 3)
+	logging.Logger().Errorf("errorf:%d, %d, %d", 1, 2, 3)
+}

@@ -12,7 +12,6 @@ import (
 	"net"
 	"reflect"
 	"sync"
-	"time"
 	"unicode"
 	"unicode/utf8"
 )
@@ -47,20 +46,14 @@ func (this *clientLogger) DoPostCall(ctx context.Context, servicePath, serviceMe
 
 	if err != nil {
 		if _logger != nil {
-			timeStr := time.Now().Format("2006/01/02 15:04:05")
-			_logger.Errorf("[RPCX]%s method:DoPostCall request_id:%d user_name:%s service_call:%s.%s args:%s reply:%s error:%s",
-				timeStr, request_id, user_name, servicePath, serviceMethod, argsInfo, replyInfo, err.Error())
+			_logger.Rpc("request_id:%d user_name:%s service_call:%s.%s args:%s reply:%s error:%s",
+				 request_id, user_name, servicePath, serviceMethod, argsInfo, replyInfo, err.Error())
 		}
 		return nil
 	}
-
-	var info = fmt.Sprintf("method:DoPostCall requestid:%d username:%s servicecall:%s.%s args:%s reply:%s",
-		request_id, user_name, servicePath, serviceMethod, argsInfo, replyInfo)
-	if logger, ok := _logger.(IRpcxLogger); ok {
-		logger.Rpcx(info)
-	} else if _logger != nil {
-		timeStr := time.Now().Format("2006/01/02 15:04:05")
-		_logger.Infof("[RPCX]%s %s", timeStr, info)
+	if _logger != nil {
+		_logger.Rpc("requestid:%d username:%s servicecall:%s.%s args:%s reply:%s",
+			request_id, user_name, servicePath, serviceMethod, argsInfo, replyInfo)
 	}
 	return nil
 }
@@ -144,21 +137,16 @@ func (this *serverlogger) logPrint(prefix string, ctx context.Context, msg *prot
 
 	if e != nil {
 		if _logger != nil {
-			timeStr := time.Now().Format("2006/01/02 15:04:05")
-			_logger.Errorf("[RPCX]%s method:%s requestid:%d username:%s servicecall:%s.%s error:%s",
-				timeStr, prefix, request_id, user_name, msg.ServicePath, msg.ServiceMethod, e.Error())
+			_logger.Rpc("requestid:%d username:%s servicecall:%s.%s error:%s",
+				request_id, user_name, msg.ServicePath, msg.ServiceMethod, e.Error())
 		}
 		return
 	}
 
 	data := this.paylodConvert(ctx, msg, msgType)
-	var info = fmt.Sprintf("method:%s requestid:%d username:%s servicecall:%s.%s metadata:%s payload:%+v",
-		prefix, request_id, user_name, msg.ServicePath, msg.ServiceMethod, msg.Metadata, data)
-	if logger, ok := _logger.(IRpcxLogger); ok {
-		logger.Rpcx(info)
-	} else if _logger != nil {
-		timeStr := time.Now().Format("2006/01/02 15:04:05")
-		_logger.Infof("[RPCX]%s %s\n", timeStr, info)
+	if _logger != nil {
+		_logger.Rpc("requestid:%d username:%s servicecall:%s.%s metadata:%s payload:%+v",
+			request_id, user_name, msg.ServicePath, msg.ServiceMethod, msg.Metadata, data)
 	}
 }
 

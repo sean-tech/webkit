@@ -23,13 +23,12 @@ import (
 )
 
 type IRpcxLogger interface {
-	Rpcx(v ...interface{})
-	Error(v ...interface{})
-	Errorf(format string, v ...interface{})
+	Rpc(v ...interface{})
+	rpcxLog.Logger
 }
 
 // log
-var _logger 	rpcxLog.Logger
+var _logger IRpcxLogger
 
 type RpcConfig struct {
 	RunMode string							`json:"-" validate:"required,oneof=debug test release"`
@@ -76,7 +75,7 @@ var (
  * 启动 服务server
  * registerFunc 服务注册回调函数
  */
-func ServerServe(config RpcConfig, logger rpcxLog.Logger, registerFunc RpcRegisterFunc) {
+func ServerServe(config RpcConfig, logger IRpcxLogger, registerFunc RpcRegisterFunc) {
 	// config validate
 	if logger != nil {
 		_logger = logger
@@ -224,7 +223,7 @@ func CreateClient(serviceName, serverName string) client.XClient {
 		cert, err := tls.X509KeyPair([]byte(_config.Tls.ServerCert), []byte(_config.Tls.ServerKey))
 		if err != nil {
 			if _logger != nil {
-				_logger.Errorf("[RPCX]:unable to read cert.pem and cert.key : %s", err.Error())
+				_logger.Rpc("unable to read cert.pem and cert.key : %s", err.Error())
 			}
 			goto OPTION_SECRET_SETED
 		}
@@ -232,7 +231,7 @@ func CreateClient(serviceName, serverName string) client.XClient {
 		ok := certPool.AppendCertsFromPEM([]byte(_config.Tls.CACert))
 		if !ok {
 			if _logger != nil {
-				_logger.Errorf("[RPCX]:failed to parse root certificate : %s", err.Error())
+				_logger.Rpc("failed to parse root certificate : %s", err.Error())
 			}
 			goto OPTION_SECRET_SETED
 		}

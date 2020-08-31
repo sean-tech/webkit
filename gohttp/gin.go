@@ -80,7 +80,7 @@ func HttpServerServe(config HttpConfig, logger IGinLogger, registerFunc GinRegis
 	// gin
 	gin.SetMode(config.RunMode)
 	gin.DisableConsoleColor()
-	gin.DefaultWriter = io.MultiWriter(_logger.Writer(), os.Stdout)
+	gin.DefaultWriter = io.MultiWriter(_logger.APIWriter(), os.Stdout)
 
 	// engine
 	//engine := gin.Default()
@@ -290,7 +290,7 @@ func (g *Gin) Response(statusCode int, msg string, data interface{}, sign string
 
 
 type IGinLogger interface {
-	Writer() io.Writer
+	APIWriter() io.Writer
 	Gin(v ...interface{})
 }
 
