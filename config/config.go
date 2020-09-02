@@ -43,7 +43,7 @@ func (cfg *AppConfig) Validate() error {
 			return err
 		}
 		if cfg.Http.RsaOpen {
-			if err := validate.ValidateParameter(cfg.Http.Rsa); err != nil {
+			if err := validate.ValidateParameter(cfg.Http.RsaMap); err != nil {
 				return err
 			}
 		}

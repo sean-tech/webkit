@@ -35,15 +35,15 @@ type CError interface {
 }
 
 type HttpConfig struct {
-	RunMode 			string			`json:"-" validate:"required,oneof=debug test release"`
-	WorkerId 			int64			`json:"-" validate:"min=0"`
-	HttpPort            int				`json:"-"`
-	ReadTimeout         time.Duration	`json:"read_timeout" validate:"required,gte=1"`
-	WriteTimeout        time.Duration	`json:"write_timeout" validate:"required,gte=1"`
-	CorsAllow			bool			`json:"cors_allow"`
-	CorsAllowOrigins	[]string		`json:"cors_allow_origins"`
-	RsaOpen bool                   		`json:"rsa_open"`
-	Rsa 	*RsaConfig					`json:"-"`
+	RunMode          string        `json:"-" validate:"required,oneof=debug test release"`
+	WorkerId         int64         `json:"-" validate:"min=0"`
+	HttpPort         int           `json:"-"`
+	ReadTimeout      time.Duration `json:"read_timeout" validate:"required,gte=1"`
+	WriteTimeout     time.Duration `json:"write_timeout" validate:"required,gte=1"`
+	CorsAllow        bool          `json:"cors_allow"`
+	CorsAllowOrigins []string      `json:"cors_allow_origins"`
+	RsaOpen          bool          `json:"rsa_open"`
+	RsaMap           map[string]*RsaConfig    `json:"-"`
 }
 
 /** 服务注册回调函数 **/
@@ -64,10 +64,10 @@ func HttpServerServe(config HttpConfig, logger IGinLogger, registerFunc GinRegis
 		log.Fatal(err)
 	}
 	if config.RsaOpen {
-		if config.Rsa == nil {
+		if config.RsaMap == nil {
 			log.Fatal("server http start error : secret is nil")
 		}
-		if err := validate.ValidateParameter(config.Rsa); err != nil {
+		if err := validate.ValidateParameter(config.RsaMap); err != nil {
 			log.Fatal(err)
 		}
 	}

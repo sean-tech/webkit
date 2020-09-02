@@ -21,8 +21,8 @@ var testconfig = &config.AppConfig{
 		HttpPort:     9022,
 		ReadTimeout:  60 * time.Second,
 		WriteTimeout: 60 * time.Second,
-		RsaOpen: false,
-		Rsa:     nil,
+		RsaOpen:      false,
+		RsaMap:       nil,
 	},
 	Rpc:     &gorpc.RpcConfig{
 		RunMode:              "debug",

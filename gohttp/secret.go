@@ -11,6 +11,12 @@ import (
 	"log"
 )
 
+const (
+	HEADER_TOKEN_AUTH = "Authorization"
+	HEADER_CLIENT_VERSION = "Version"
+	HEADER_CLIENT_SIGN = "sign"
+)
+
 type SecretParams struct {
 	Secret string	`json:"secret" validate:"required,base64"`
 }
@@ -27,24 +33,29 @@ type TokenParseFunc func(ctx context.Context, token string) (userId uint64, user
  * rsa拦截校验
  */
 func InterceptRsa() gin.HandlerFunc {
-	var rsa = _config.Rsa
-	if err := validate.ValidateParameter(rsa); err != nil {
-		log.Fatal(err)
-	}
 	return func(ctx *gin.Context) {
 		g := Gin{ctx}
+		clientVersion := ctx.GetHeader(HEADER_CLIENT_VERSION)
+		rsa, ok := _config.RsaMap[clientVersion]
+		if !ok {
+			g.ResponseError(requisition.NewError(nil, STATUS_CODE_RSA_VERSION_FIT_FAILED))
+			ctx.Abort()
+			return
+		}
+		if err := validate.ValidateParameter(rsa); err != nil {
+			log.Fatal(err)
+		}
 		g.getGinRequisition().Rsa = rsa
-
 
 		var code = STATUS_CODE_SUCCESS
 		var params SecretParams
 		var encrypted []byte
 		var jsonBytes []byte
-		var sign = ctx.GetHeader("sign")
-		var signDatas, _ = base64.StdEncoding.DecodeString(sign)
-
-		// params handle
-		if err := g.Ctx.Bind(&params); err != nil { // bind
+		if sign := ctx.GetHeader(HEADER_CLIENT_SIGN); sign == "" {
+			code = STATUS_CODE_SIGN_IS_EMPTY
+		} else if signDatas, err := base64.StdEncoding.DecodeString(sign); err != nil {
+			code = STATUS_CODE_SIGN_VALIDATE_FAILED
+		} else if err := g.Ctx.Bind(&params); err != nil { // bind
 			code = STATUS_CODE_SECRET_CHECK_FAILED
 		} else if err := validate.ValidateParameter(params); err != nil { // validate
 			code = STATUS_CODE_INVALID_PARAMS
@@ -74,7 +85,7 @@ func InterceptRsa() gin.HandlerFunc {
 func InterceptToken(tokenParse TokenParseFunc) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		g := Gin{ctx}
-		if userId, userName, role, key, err := tokenParse(ctx, ctx.GetHeader("Authorization")); err != nil {
+		if userId, userName, role, key, err := tokenParse(ctx, ctx.GetHeader(HEADER_TOKEN_AUTH)); err != nil {
 			g.ResponseError(err)
 			ctx.Abort()
 			return

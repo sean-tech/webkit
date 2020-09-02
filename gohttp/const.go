@@ -10,6 +10,9 @@ const (
 	STATUS_CODE_FAILED         					= 800
 
 	// secret
+	STATUS_CODE_RSA_VERSION_FIT_FAILED			= 840
+	STATUS_CODE_SIGN_IS_EMPTY					= 841
+	STATUS_CODE_SIGN_VALIDATE_FAILED			= 842
 	STATUS_CODE_SECRET_CHECK_FAILED    			= 843
 	STATUS_CODE_PERMISSION_DENIED    			= 844
 
@@ -25,6 +28,9 @@ func init() {
 		STATUS_CODE_INVALID_PARAMS : 				"参数校验失败",
 		STATUS_CODE_ERROR : 						"系统错误",
 		STATUS_CODE_FAILED : 						"操作失败",
+		STATUS_CODE_RSA_VERSION_FIT_FAILED : 		"安全证书版本匹配失败",
+		STATUS_CODE_SIGN_IS_EMPTY :					"请求签名为空",
+		STATUS_CODE_SIGN_VALIDATE_FAILED :			"请求签名校验失败",
 		STATUS_CODE_SECRET_CHECK_FAILED : 			"安全校验失败",
 		STATUS_CODE_PERMISSION_DENIED : 			"您没有访问权限",
 		STATUS_CODE_UPLOAD_FILE_SAVE_FAILED : 		"文件保存失败",
@@ -36,6 +42,9 @@ func init() {
 		STATUS_CODE_INVALID_PARAMS : 				"params validate failed",
 		STATUS_CODE_ERROR : 						"system error",
 		STATUS_CODE_FAILED : 						"failed",
+		STATUS_CODE_RSA_VERSION_FIT_FAILED : 		"safe cert version fit failed",
+		STATUS_CODE_SIGN_IS_EMPTY :					"request sign empty",
+		STATUS_CODE_SIGN_VALIDATE_FAILED :			"request sign validate failed",
 		STATUS_CODE_SECRET_CHECK_FAILED : 			"secret check failed",
 		STATUS_CODE_PERMISSION_DENIED : 			"permission denied",
 		STATUS_CODE_UPLOAD_FILE_SAVE_FAILED : 		"file save failed",

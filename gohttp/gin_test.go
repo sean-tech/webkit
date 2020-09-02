@@ -56,7 +56,13 @@ func RegisterApi(engine *gin.Engine) {
 	{
 		apiv1.POST("/bindtest", bindtest)
 	}
+	engine.Static("/Desktop", "/Users/Sean/Desktop")
 }
+/*
+	StaticFile(string, string) IRoutes	静态文件路由 router.StaticFile("favicon.ico", "./resources/favicon.ico")
+	Static(string, string) IRoutes	静态文件夹路由 router.Static("/路由","./文件夹目录")
+	StaticFS(string, http.FileSystem) IRoutes	静态文件路由 router.Static("/路由",gin.Dir("FileSystem"))
+ */
 
 func bindtest(ctx *gin.Context)  {
 	date := ctx.Request.Header.Get("Date")
