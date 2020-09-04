@@ -292,6 +292,7 @@ func (g *Gin) Response(statusCode int, msg string, data interface{}, sign string
 type IGinLogger interface {
 	APIWriter() io.Writer
 	Gin(v ...interface{})
+	Error(v ...interface{})
 }
 
 func (g *Gin) LogRequestParam(parameter interface{}) {
@@ -300,11 +301,11 @@ func (g *Gin) LogRequestParam(parameter interface{}) {
 	}
 	var req = requisition.GetRequisition(g.Ctx)
 	if jsonBytes, ok := parameter.([]byte); ok {
-		_logger.Gin("requestid:", req.RequestId, " user_name:", req.UserName, " params:", string(jsonBytes), "\n")
+		_logger.Gin("requestid:", req.RequestId, " username:", req.UserName, " params:", string(jsonBytes), "\n")
 	} else if jsonBytes, err := json.Marshal(parameter); err == nil {
-		_logger.Gin("requestid:", req.RequestId, " user_name:", req.UserName, " params:", string(jsonBytes), "\n")
+		_logger.Gin("requestid:", req.RequestId, " username:", req.UserName, " params:", string(jsonBytes), "\n")
 	} else {
-		_logger.Gin("requestid:", req.RequestId, " user_name:", req.UserName, " params:", parameter, "\n")
+		_logger.Gin("requestid:", req.RequestId, " username:", req.UserName, " params:", parameter, "\n")
 	}
 }
 
