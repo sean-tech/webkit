@@ -60,6 +60,7 @@ type IAuthApi interface {
 
 type IAuthService interface {
 	NewAuth(ctx context.Context, parameter *NewAuthParameter, result *AuthResult) error
+	DelAuth(ctx context.Context, parameter *DelAuthParameter, result *bool) error
 	AuthRefresh(ctx context.Context, parameter *AuthRefreshParameter, result *AuthResult) error
 	AccessTokenAuth(ctx context.Context, parameter *AccessTokenAuthParameter, accessTokenItem *TokenItem) error
 }
