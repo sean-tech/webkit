@@ -13,9 +13,9 @@ import (
 
 type TokenItem struct {
 	Id 			string		`json:"id"`
-	ExpiresAt 	int64  		`json:"expires_at"`
+	ExpiresAt 	int64  		`json:"expiresAt"`
 	UUID 		string 		`json:"uuid"`
-	SignedId	string		`json:"signed_id"`
+	SignedId	string		`json:"signedId"`
 	UserId 		uint64 		`json:"userId"`
 	UserName 	string 		`json:"userName"`
 	Role 		string		`json:"role"`
@@ -25,25 +25,29 @@ type TokenItem struct {
 }
 
 type NewAuthParameter struct {
-	AuthCode 	string		`json:"auth_code" validate:"required,gte=1"`
+	AuthCode 	string		`json:"authCode" validate:"required,gte=1"`
 	UUID 		string		`json:"uuid" validate:"required,gte=1"`
-	UserId 		uint64		`json:"userid" validate:"required,gte=1"`
-	UserName 	string		`json:"username" validate:"required,gte=1"`
+	UserId 		uint64		`json:"userId" validate:"required,gte=1"`
+	UserName 	string		`json:"userName" validate:"required,gte=1"`
 	Role 		string		`json:"role" validate:"required,gte=1"`
 	Client 		string		`json:"client" validate:"required,gte=1"`
 }
+type DelAuthParameter struct {
+	AuthCode 	string		`json:"authCode" validate:"required,gte=1"`
+	UserName 	string		`json:"userName" validate:"required,gte=1"`
+}
 type AuthRefreshParameter struct {
-	RefreshToken 	string	`json:"refresh_token" validate:"required,gte=1"`
-	AccessToken 	string	`json:"access_token" validate:"required,gte=1"`
+	RefreshToken 	string	`json:"refreshToken" validate:"required,gte=1"`
+	AccessToken 	string	`json:"accessToken" validate:"required,gte=1"`
 }
 type AuthResult struct {
-	RefreshToken 	string	`json:"refresh_token" validate:"required,gte=1"`
+	RefreshToken 	string	`json:"refreshToken" validate:"required,gte=1"`
 	Key 			string	`json:"key" validate:"required,gte=1"`
-	AccessToken 	string	`json:"access_token" validate:"required,gte=1"`
+	AccessToken 	string	`json:"accessToken" validate:"required,gte=1"`
 }
 
 type AccessTokenAuthParameter struct {
-	AccessToken 	string	`json:"access_token" validate:"required,gte=1"`
+	AccessToken 	string	`json:"accessToken" validate:"required,gte=1"`
 }
 
 

@@ -6,6 +6,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/sean-tech/gokit/encrypt"
 	"github.com/sean-tech/gokit/requisition"
+	"github.com/sean-tech/gokit/validate"
 	"strconv"
 	"time"
 )
@@ -17,6 +18,9 @@ type serviceImpl struct {
 }
 
 func (this *serviceImpl) NewAuth(ctx context.Context, parameter *NewAuthParameter, result *AuthResult) error {
+	if err := validate.ValidateParameter(parameter); err != nil {
+		return err
+	}
 	if parameter.AuthCode != this.authCode {
 		return requisition.NewError(nil, status_code_auth_code_wrong)
 	}
@@ -51,7 +55,27 @@ func (this *serviceImpl) NewAuth(ctx context.Context, parameter *NewAuthParamete
 	return nil
 }
 
+func (this *serviceImpl) DelAuth(ctx context.Context, parameter *DelAuthParameter, result *bool) error {
+	if err := validate.ValidateParameter(parameter); err != nil {
+		return err
+	}
+	if parameter.AuthCode != this.authCode {
+		return requisition.NewError(nil, status_code_auth_code_wrong)
+	}
+	if err := dao().DeleteAccessTokenItem(parameter.UserName); err != nil {
+		return err
+	}
+	if err := dao().DeleteRefreshTokenItem(parameter.UserName); err != nil {
+		return err
+	}
+	*result = true
+	return nil
+}
+
 func (this *serviceImpl) AuthRefresh(ctx context.Context, parameter *AuthRefreshParameter, result *AuthResult) error {
+	if err := validate.ValidateParameter(parameter); err != nil {
+		return err
+	}
 	// access token validate
 	var accessTokenAuthParameter = &AccessTokenAuthParameter{
 		AccessToken: parameter.AccessToken,
@@ -99,6 +123,9 @@ func (this *serviceImpl) AuthRefresh(ctx context.Context, parameter *AuthRefresh
 }
 
 func (this *serviceImpl) AccessTokenAuth(ctx context.Context, parameter *AccessTokenAuthParameter, accessTokenItem *TokenItem) error {
+	if err := validate.ValidateParameter(parameter); err != nil {
+		return err
+	}
 	// parse token
 	var accessTokenClaims *TokenClaims; var err error
 	if accessTokenClaims, err = parseToken(parameter.AccessToken); err != nil {
