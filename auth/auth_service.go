@@ -207,7 +207,21 @@ func parseToken(token string) (*TokenClaims, error) {
 		return []byte(_config.TokenSecret), nil
 	})
 	if err != nil {
-		return nil, err
+		e, ok := err.(jwt.ValidationError)
+		if ok {
+			return nil, err
+		}
+		switch e.Errors {
+		case jwt.ValidationErrorExpired:       // EXP validation failed
+			return nil, requisition.NewError(nil, status_code_auth_token_timeout)
+		case jwt.ValidationErrorSignatureInvalid: fallthrough // Signature validation failed
+		case jwt.ValidationErrorIssuedAt: fallthrough      // IAT validation failed
+		case jwt.ValidationErrorIssuer: fallthrough        // ISS validation failed
+		case jwt.ValidationErrorId:            // JTI validation failed
+			return nil, requisition.NewError(nil, status_code_auth_token_checkfaild)
+		default:
+			return nil, err
+		}
 	} else if tokenClaims == nil {
 		return nil, requisition.NewError(nil, status_code_auth_token_checkfaild)
 	} else if !tokenClaims.Valid {
