@@ -207,8 +207,8 @@ func parseToken(token string) (*TokenClaims, error) {
 		return []byte(_config.TokenSecret), nil
 	})
 	if err != nil {
-		e, ok := err.(jwt.ValidationError)
-		if ok {
+		e, ok := err.(*jwt.ValidationError)
+		if !ok {
 			return nil, err
 		}
 		switch e.Errors {
