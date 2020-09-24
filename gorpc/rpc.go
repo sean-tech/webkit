@@ -31,22 +31,27 @@ type IRpcxLogger interface {
 var _logger IRpcxLogger
 
 type RpcConfig struct {
-	RunMode string							`json:"-" validate:"required,oneof=debug test release"`
+	RunMode 				string			`json:"-" validate:"required,oneof=debug test release"`
 	RpcPort               	int				`json:"-"`
 	RpcPerSecondConnIdle  	int64			`json:"rpc_per_second_conn_idle" validate:"required,gte=1"`
 	ReadTimeout           	time.Duration	`json:"read_timeout" validate:"required,gte=1"`
 	WriteTimeout          	time.Duration	`json:"write_timeout" validate:"required,gte=1"`
 	// token
-	TokenSecret      		string        	`json:"token_secret" validate:"required,gte=1"`
-	TokenIssuer      		string        	`json:"token_issuer" validate:"required,gte=1"`
+	TokenAuth				bool			`json:"token_auth"`
+	Token                   *TokenConfig	`json:"token"`
 	// tls
-	TlsOpen					bool			`json:"tls_open"`
-	Tls						*TlsConfig		`json:"-"`
+	TlsAuth 				bool       		`json:"tls_auth"`
+	Tls     				*TlsConfig 		`json:"-"`
 	// whiteList
-	WhiteListOpen 			bool			`json:"white_list_open"`
-	WhiteListIps			[]string		`json:"white_list_ips"`
+	WhitelistAuth 			bool     		`json:"whitelist_auth"`
+	Whitelist     			[]string 		`json:"whitelist"`
 	// etcd
 	Registry				*EtcdRegistry	`json:"-"`
+}
+
+type TokenConfig struct {
+	TokenSecret      		string        	`json:"token_secret" validate:"required,gte=1"`
+	TokenIssuer      		string        	`json:"token_issuer" validate:"required,gte=1"`
 }
 
 type TlsConfig struct {
@@ -86,10 +91,9 @@ func ServerServe(config RpcConfig, logger IRpcxLogger, registerFunc RpcRegisterF
 
 	// server
 	var s *server.Server
-	if config.TlsOpen == false {
+	if config.TlsAuth == false {
 		s = server.NewServer(server.WithReadTimeout(config.ReadTimeout), server.WithWriteTimeout(config.WriteTimeout))
 	} else {
-
 		//cert, err := tls.LoadX509KeyPair(_config.ServerPemPath, _config.ServerKeyPath)
 		cert, err := tls.X509KeyPair([]byte(config.Tls.ServerCert), []byte(config.Tls.ServerKey))
 		if err != nil {
@@ -130,7 +134,7 @@ func configValidate(config RpcConfig)  {
 	if err := validate.ValidateParameter(config.Registry); err != nil {
 		log.Fatal(err)
 	}
-	if config.TlsOpen {
+	if config.TlsAuth {
 		if config.Tls == nil {
 			log.Fatal("server rpc start error : secret is nil")
 		}
@@ -141,12 +145,16 @@ func configValidate(config RpcConfig)  {
 }
 
 func registerPlugins(s *server.Server, address string)  {
+	// logger
 	s.Plugins.Add(ServerLogger)
-	s.AuthFunc = serverAuth
-	// white list
-	if _config.WhiteListOpen {
+	// token auth
+	if _config.TokenAuth {
+		s.AuthFunc = serverAuth
+	}
+	// whitelist auth
+	if _config.WhitelistAuth {
 		var wl = make(map[string]bool)
-		for _, ip := range _config.WhiteListIps {
+		for _, ip := range _config.Whitelist {
 			wl[ip] = true
 		}
 		s.Plugins.Add(serverplugin.WhitelistPlugin{
@@ -154,8 +162,9 @@ func registerPlugins(s *server.Server, address string)  {
 			WhitelistMask: nil,
 		})
 	}
-	
+	// etcd register
 	RegisterPluginEtcd(s, address)
+	// ratelimit
 	RegisterPluginRateLimit(s)
 }
 
@@ -168,7 +177,6 @@ func RegisterPluginEtcd(s *server.Server, serviceAddr string)  {
 		s.Plugins.Add(plugin)
 		return
 	}
-
 	plugin := &serverplugin.EtcdV3RegisterPlugin{
 		ServiceAddress: "tcp@" + serviceAddr,
 		EtcdServers:    _config.Registry.EtcdEndPoints,
@@ -205,7 +213,10 @@ func RegisterPluginRateLimit(s *server.Server)  {
 
 
 
-var clientMap sync.Map
+var (
+	clientMap sync.Map
+	p2pClientMap sync.Map
+)
 /**
  * 创建rpc调用客户端，基于Etcd服务发现
  */
@@ -213,19 +224,41 @@ func CreateClient(serviceName, serverName string) client.XClient {
 	if c, ok := clientMap.Load(serviceName); ok {
 		return c.(client.XClient)
 	}
+	option := createClientOption(serverName)
+	xclient := client.NewXClient(serviceName, client.Failover, client.RoundRobin, newDiscovery(serviceName), option)
+	xclient.GetPlugins().Add(ClientLogger)
+	clientMap.Store(serviceName, xclient)
+	return xclient
+}
+
+/**
+ * 创建rpc调用客户端，基于Etcd服务发现
+ */
+func CreateP2pClient(serviceName, serverName string, addrs []string) client.XClient {
+	if c, ok := p2pClientMap.Load(serviceName); ok {
+		return c.(client.XClient)
+	}
+	option := createClientOption(serverName)
+	xclient := client.NewXClient(serviceName, client.Failover, client.RoundRobin, newP2PDiscovery(addrs), option)
+	xclient.GetPlugins().Add(ClientLogger)
+	p2pClientMap.Store(serviceName, xclient)
+	return xclient
+}
+
+func createClientOption(serverName string) client.Option {
 	option := client.DefaultOption
 	option.Heartbeat = true
 	option.HeartbeatInterval = time.Second
 	option.ReadTimeout = _config.ReadTimeout
 	option.WriteTimeout = _config.WriteTimeout
-	if _config.TlsOpen {
+	if _config.TlsAuth {
 		//cert, err := tls.LoadX509KeyPair(_config.ServerPemPath, _config.ServerKeyPath)
 		cert, err := tls.X509KeyPair([]byte(_config.Tls.ServerCert), []byte(_config.Tls.ServerKey))
 		if err != nil {
 			if _logger != nil {
 				_logger.Rpc("unable to read cert.pem and cert.key : %s", err.Error())
 			}
-			goto OPTION_SECRET_SETED
+			return option
 		}
 		certPool := x509.NewCertPool()
 		ok := certPool.AppendCertsFromPEM([]byte(_config.Tls.CACert))
@@ -233,7 +266,7 @@ func CreateClient(serviceName, serverName string) client.XClient {
 			if _logger != nil {
 				_logger.Rpc("failed to parse root certificate : %s", err.Error())
 			}
-			goto OPTION_SECRET_SETED
+			return option
 		}
 		option.TLSConfig = &tls.Config{
 			RootCAs:            certPool,
@@ -242,11 +275,24 @@ func CreateClient(serviceName, serverName string) client.XClient {
 			ServerName: serverName + "." + _config.Tls.CACommonName,
 		}
 	}
-OPTION_SECRET_SETED:
-	xclient := client.NewXClient(serviceName, client.Failover, client.RoundRobin, newDiscovery(serviceName), option)
-	xclient.GetPlugins().Add(ClientLogger)
-	clientMap.Store(serviceName, xclient)
-	return xclient
+	return option
+}
+
+func newP2PDiscovery(addrs []string) client.ServiceDiscovery {
+	if addrs == nil {
+		if _logger != nil {
+			_logger.Error("failed to create service Peer2Peer discovery : addrs is nil")
+		}
+		return nil
+	}
+	if len(addrs) == 1 {
+		return client.NewPeer2PeerDiscovery("tcp@" +addrs[0], "")
+	}
+	var clientkvs []*client.KVPair
+	for _, addr := range addrs {
+		clientkvs = append(clientkvs, &client.KVPair{Key: addr})
+	}
+	return client.NewMultipleServersDiscovery(clientkvs)
 }
 
 func newDiscovery(serviceName string) client.ServiceDiscovery {
@@ -269,31 +315,14 @@ func newDiscovery(serviceName string) client.ServiceDiscovery {
 }
 
 /**
- * call
- */
-func Call(serviceName, serverName string, ctx context.Context, serviceMethod string, args interface{}, reply interface{}) error {
-	client := CreateClient(serviceName, serverName)
-	return ClientCall(client, ctx, serviceMethod, args, reply)
-}
-
-/**
  * client call
  */
 func ClientCall(client client.XClient, ctx context.Context, serviceMethod string, args interface{}, reply interface{}) error {
-
 	if ctx, err := clientAuth(client, ctx); err != nil {
 		return err
 	} else {
 		return client.Call(ctx, serviceMethod, args, reply)
 	}
-}
-
-/**
- * go
- */
-func Go(serviceName, serverName string, ctx context.Context, serviceMethod string, args interface{}, reply interface{}, done chan *client.Call) (*client.Call, error) {
-	client := CreateClient(serviceName, serverName)
-	return ClientGo(client, ctx, serviceMethod, args, reply, done)
 }
 
 /**
@@ -308,22 +337,57 @@ func ClientGo(client client.XClient, ctx context.Context, serviceMethod string, 
 }
 
 /**
+ * call
+ */
+func Call(serviceName, serverName string, ctx context.Context, serviceMethod string, args interface{}, reply interface{}) error {
+	client := CreateClient(serviceName, serverName)
+	return ClientCall(client, ctx, serviceMethod, args, reply)
+}
+
+/**
+ * go
+ */
+func Go(serviceName, serverName string, ctx context.Context, serviceMethod string, args interface{}, reply interface{}, done chan *client.Call) (*client.Call, error) {
+	client := CreateClient(serviceName, serverName)
+	return ClientGo(client, ctx, serviceMethod, args, reply, done)
+}
+
+/**
+ * p2p call
+ */
+func P2pCall(serviceName, serverName string, addrs []string, ctx context.Context, serviceMethod string, args interface{}, reply interface{}) error {
+	client := CreateP2pClient(serviceName, serverName, addrs)
+	return ClientCall(client, ctx, serviceMethod, args, reply)
+}
+
+/**
+ * p2p go
+ */
+func P2pGo(serviceName, serverName string, addrs []string, ctx context.Context, serviceMethod string, args interface{}, reply interface{}, done chan *client.Call) (*client.Call, error) {
+	client := CreateP2pClient(serviceName, serverName, addrs)
+	return ClientGo(client, ctx, serviceMethod, args, reply, done)
+}
+
+
+
+/**
  * client auth
  */
 func clientAuth(client client.XClient, ctx context.Context) (context.Context, error) {
-	var req_id uint64 = 0; var user_id uint64 = 0; var user_name = ""
+	var reqId uint64 = 0; var userId uint64 = 0; var userName = ""
 	if req := requisition.GetRequisition(ctx); req != nil {
-		req_id = req.RequestId
-		user_id = req.UserId
-		user_name = req.UserName
+		reqId = req.RequestId
+		userId = req.UserId
+		userName = req.UserName
 	}
-	var expiresTime = (_config.ReadTimeout + _config.WriteTimeout) * 2
-	if token, err := generateToken(req_id, user_id, user_name, _config.TokenSecret, _config.TokenIssuer, expiresTime); err != nil {
-		return ctx, err
-	} else {
-		client.Auth(token)
+	if _config.TokenAuth {
+		var expiresTime = (_config.ReadTimeout + _config.WriteTimeout) * 2
+		if token, err := generateToken(reqId, userId, userName, _config.Token.TokenSecret, _config.Token.TokenIssuer, expiresTime); err != nil {
+			return ctx, err
+		} else {
+			client.Auth(token)
+		}
 	}
-
 	if ctx == nil {
 		ctx = requisition.NewRequestionContext(context.Background())
 	}
@@ -335,8 +399,7 @@ func clientAuth(client client.XClient, ctx context.Context) (context.Context, er
  * server token auth
  */
 func serverAuth(ctx context.Context, req *protocol.Message, token string) error {
-
-	if tokenInfo, err := parseToken(token, _config.TokenSecret, _config.TokenIssuer); err != nil {
+	if tokenInfo, err := parseToken(token, _config.Token.TokenSecret, _config.Token.TokenIssuer); err != nil {
 		return err
 	} else if tokenInfo.RequestId <= 0 {
 		return errors.New("invalid request_id in token")

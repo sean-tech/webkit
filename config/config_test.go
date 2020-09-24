@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/sean-tech/gokit/fileutils"
+	"github.com/sean-tech/webkit/logging"
 	"io/ioutil"
+	"net"
+	"net/rpc"
 	"testing"
 )
 
@@ -35,8 +38,13 @@ type CC struct {
 
 func (this *CC) AppConfigLoad(worker *Worker, config *AppConfig) error {
 	fmt.Println("module is ", worker.Module, "ip is ", worker.Ip)
+	//panic("ha ha i am panicing")
 	*config = AppConfig{
-		Log:     nil,
+		Log:     &logging.LogConfig{
+			RunMode:     "debug",
+			LogSavePath: "/ahdsjadh",
+			LogPrefix:   "zc",
+		},
 		Http:    nil,
 		Rpc:     nil,
 		Mysql:   nil,
@@ -47,14 +55,19 @@ func (this *CC) AppConfigLoad(worker *Worker, config *AppConfig) error {
 }
 
 func TestRunServer(t *testing.T) {
-	go ConfigCernterServing(new(CC), 1234, []string{"192.168.1.21"})
+	go ConfigCernterServing(new(CC), 1234, func(clientIp string) bool {
+		if clientIp == "192.168.1.21" || clientIp == "172.20.10.2" {
+			 return true
+		}
+		return false
+	})
 	select {
 
 	}
 }
 
 func TestCallServer(t *testing.T) {
-	config := configLoadFromCenter("192.168.1.21:1234", "webkittest", "user")
+	config := configLoadFromCenter("172.20.10.2:1234", "webkittest", "user")
 	fmt.Println(config)
 }
 
@@ -71,3 +84,24 @@ func TestFilePahtJudge(t *testing.T) {
 	}
 }
 
+
+func TestRpcServe(t *testing.T) {
+	port := 1234
+	cc := new(CC)
+	rpc.RegisterName(ConfigCenterServiceName, &rcvr{cc: cc})
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	if err != nil {
+		t.Fatal("ListenTCP error:", err)
+	}
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			t.Fatal("Accept error:", err)
+		}
+		go serveconn(conn)
+	}
+}
+
+func serveconn(conn net.Conn)  {
+	rpc.ServeConn(conn)
+}

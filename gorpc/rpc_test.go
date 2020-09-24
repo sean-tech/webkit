@@ -9,6 +9,8 @@ import (
 	"github.com/smallnest/rpcx/server"
 	"io/ioutil"
 	"log"
+	"os"
+	"os/signal"
 	"testing"
 	"time"
 )
@@ -46,16 +48,19 @@ func TestRpcServer(t *testing.T) {
 	ServerCertBytes, _ := ioutil.ReadFile("/Users/sean/Desktop/Go/secret/webkit/server1.pem")
 	ServerKeyBytes, _ := ioutil.ReadFile("/Users/sean/Desktop/Go/secret/webkit/server1.key")
 	CACertBytes, _ := ioutil.ReadFile("/Users/sean/Desktop/Go/secret/webkit/ca.pem")
-	_rpc_testing = true
+	//_rpc_testing = true
 	ServerServe(RpcConfig{
 		RunMode:              "debug",
 		RpcPort:              9001,
 		RpcPerSecondConnIdle: 500,
 		ReadTimeout:          60 * time.Second,
 		WriteTimeout:         60 * time.Second,
-		TokenSecret: "asdasd",
-		TokenIssuer: "zhsa",
-		TlsOpen: true,
+		TokenAuth: 			  false,
+		Token: &TokenConfig{
+			TokenSecret:          "asdasd",
+			TokenIssuer:          "zhsa",
+		},
+		TlsAuth:              false,
 		Tls: &TlsConfig{
 			ServerCert:		  string(ServerCertBytes),
 			ServerKey:		  string(ServerKeyBytes),
@@ -74,9 +79,27 @@ func TestRpcServer(t *testing.T) {
 		server.RegisterName("User", new(userServiceImpl), "")
 	})
 
+	//var user = new(UserInfo)
+	//client := CreateClient("User", "")
+	//if err := client.Call(context.Background(), "UserAdd", &UserAddParameter{
+	//	UserName: "1237757@qq.com",
+	//	Password: "Aa123456",
+	//}, user); err != nil {
+	//	fmt.Printf("err---%s", err.Error())
+	//} else  {
+	//	fmt.Printf("user--%+v", user)
+	//}
+
+	// signal
+	quit := make(chan os.Signal)
+	signal.Notify(quit, os.Interrupt)
+	<- quit
+	log.Println("Shutdown Server ...")
+}
+
+func TestP2pCall(t *testing.T) {
 	var user = new(UserInfo)
-	client := CreateClient("User", "")
-	if err := client.Call(context.Background(), "UserAdd", &UserAddParameter{
+	if err := P2pCall("User", "", []string{"192.168.1.21:9001"}, context.Background(), "UserAdd",  &UserAddParameter{
 		UserName: "1237757@qq.com",
 		Password: "Aa123456",
 	}, user); err != nil {
@@ -84,12 +107,6 @@ func TestRpcServer(t *testing.T) {
 	} else  {
 		fmt.Printf("user--%+v", user)
 	}
-
-	//signal
-	//quit := make(chan os.Signal)
-	//signal.Notify(quit, os.Interrupt)
-	//<- quit
-	//log.Println("Shutdown Server ...")
 }
 
 

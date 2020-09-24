@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"net/rpc"
+	"runtime"
 	"strings"
 )
 
@@ -23,9 +24,31 @@ type IConfigCenter interface {
 
 type IpFitter func (clientIp string) bool
 
-func ConfigCernterServing(cc IConfigCenter, port int, fitter IpFitter) {
-	rpc.RegisterName(ConfigCenterServiceName, cc)
+type rcvr struct {
+	cc IConfigCenter
+}
 
+func (this *rcvr) AppConfigLoad(worker *Worker, config *AppConfig) error {
+	defer func() {
+		if err := recover(); err != nil {
+			const size = 64 << 10
+			buf := make([]byte, size)
+			ss := runtime.Stack(buf, false)
+			if ss > size {
+				ss = size
+			}
+			buf = buf[:ss]
+			fmt.Printf("AppConfigLaod panic error: %s, stack:\n %s", err, buf)
+		}
+	}()
+	return this.cc.AppConfigLoad(worker, config)
+}
+
+func ConfigCernterServing(cc IConfigCenter, port int, fitter IpFitter) {
+	err := rpc.RegisterName(ConfigCenterServiceName, &rcvr{cc: cc})
+	if err != nil {
+		panic(err)
+	}
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		log.Fatal("ListenTCP error:", err)

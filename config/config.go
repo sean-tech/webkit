@@ -52,7 +52,7 @@ func (cfg *AppConfig) Validate() error {
 		if err := validate.ValidateParameter(cfg.Rpc); err != nil {
 			return err
 		}
-		if cfg.Rpc.TlsOpen {
+		if cfg.Rpc.TlsAuth {
 			if err := validate.ValidateParameter(cfg.Rpc.Tls); err != nil {
 				return err
 			}
